@@ -37,14 +37,12 @@ public class SshWorkersService {
     });
     List<SidData> results = new ArrayList<>();
     futures.forEach(future -> {
-      List<SidData> result = new ArrayList<>();
       try {
-        result = new ArrayList<>(future.get(sshCollectorConfiguration.workerTimeout(), TimeUnit.MILLISECONDS));
+        results.addAll(future.get(sshCollectorConfiguration.workerTimeout(), TimeUnit.MILLISECONDS));
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         future.cancel(true);
         log.error("SshWorkersService get failed ({})", e.getClass().getSimpleName());
       }
-      results.addAll(result);
     });
     return results;
   }
