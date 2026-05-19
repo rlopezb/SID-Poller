@@ -24,9 +24,9 @@ public class SnmpWorkersService {
         snmpCollectorConfiguration.size(),
         snmpCollectorConfiguration.workerTimeout(),
         TimeUnit.MILLISECONDS,
-        new ArrayBlockingQueue<>(snmpCollectorConfiguration.size()),
+        new LinkedBlockingQueue<>(snmpCollectorConfiguration.size() * 5),
         Thread.ofVirtual().factory(),
-        new ThreadPoolExecutor.CallerRunsPolicy());
+        new ThreadPoolExecutor.DiscardPolicy());
   }
 
   public List<SidData> get(List<SnmpWorker> workers){

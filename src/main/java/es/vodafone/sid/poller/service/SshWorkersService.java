@@ -24,9 +24,9 @@ public class SshWorkersService {
         sshCollectorConfiguration.size(),
         sshCollectorConfiguration.workerTimeout(),
         TimeUnit.MILLISECONDS,
-        new ArrayBlockingQueue<>(sshCollectorConfiguration.size()),
+        new LinkedBlockingQueue<>(sshCollectorConfiguration.size() * 5),
         Thread.ofVirtual().factory(),
-        new ThreadPoolExecutor.CallerRunsPolicy());
+        new ThreadPoolExecutor.DiscardPolicy());
   }
 
   public List<SidData> get(List<SshWorker> workers){

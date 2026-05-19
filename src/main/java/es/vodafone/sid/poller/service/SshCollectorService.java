@@ -3,6 +3,7 @@ package es.vodafone.sid.poller.service;
 import es.vodafone.sid.poller.collector.SshCollector;
 import es.vodafone.sid.poller.config.SshCollectorConfiguration;
 import es.vodafone.sid.poller.model.SidData;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -33,5 +34,20 @@ class SshCollectorService {
       log.error("SshCollectorService collect failed ({})", e.getClass().getSimpleName());
     }
     log.debug("SshCollectorService collect results with size: {}", result.size());
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    log.info("Shutting down SshCollectorService executor");
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+        log.warn("Executor did not terminate, forcing shutdown");
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 }

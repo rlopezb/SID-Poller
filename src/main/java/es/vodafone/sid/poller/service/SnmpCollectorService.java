@@ -3,6 +3,7 @@ package es.vodafone.sid.poller.service;
 import es.vodafone.sid.poller.collector.SnmpCollector;
 import es.vodafone.sid.poller.config.SnmpCollectorConfiguration;
 import es.vodafone.sid.poller.model.SidData;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -33,5 +34,20 @@ class SnmpCollectorService {
       log.error("SnmpCollectorService collect failed ({})", e.getClass().getSimpleName());
     }
     log.debug("SnmpCollectorService collect results with size: {}", result.size());
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    log.info("Shutting down SnmpCollectorService executor");
+    executor.shutdown();
+    try {
+      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+        log.warn("Executor did not terminate, forcing shutdown");
+        executor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      executor.shutdownNow();
+      Thread.currentThread().interrupt();
+    }
   }
 }
