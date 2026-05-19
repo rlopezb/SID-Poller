@@ -21,15 +21,6 @@ class SnmpCollectorService {
     this.snmpCollector = snmpCollector;
     this.snmpCollectorConfiguration = snmpCollectorConfiguration;
     this.executor = Executors.newVirtualThreadPerTaskExecutor();
-//    this.executor = new ThreadPoolExecutor(
-//        collectorConfiguration.size(),
-//        collectorConfiguration.size(),
-//        collectorConfiguration.timeout(),
-//        TimeUnit.MILLISECONDS,
-//        new ArrayBlockingQueue<>(collectorConfiguration.size()),
-//        Thread.ofVirtual().factory(),
-//        new ThreadPoolExecutor.CallerRunsPolicy()
-//        );
   }
 
   public List<SidData> collect() {
