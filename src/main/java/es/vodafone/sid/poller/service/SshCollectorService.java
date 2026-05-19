@@ -23,19 +23,15 @@ class SshCollectorService {
     this.executor = Executors.newSingleThreadExecutor();
   }
 
-  public List<SidData> collect() {
+  public void collect() {
     Future<List<SidData>> future = executor.submit(sshCollector);
-    List<SidData> result = null;
+    List<SidData> result = new ArrayList<>();
     try {
-      result = new ArrayList<>(future.get(sshCollectorConfiguration.collectorTimeout(), TimeUnit.MILLISECONDS));
+      result.addAll(future.get(sshCollectorConfiguration.collectorTimeout(), TimeUnit.MILLISECONDS));
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       future.cancel(true);
       log.error("SshCollectorService collect failed ({})", e.getClass().getSimpleName());
     }
-    return result;
-  }
-
-  public void shutdown() {
-    executor.shutdownNow();
+    log.debug("SshCollectorService collect results with size: {}", result.size());
   }
 }

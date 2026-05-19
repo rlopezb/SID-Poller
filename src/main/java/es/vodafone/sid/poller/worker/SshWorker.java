@@ -12,12 +12,10 @@ import java.util.concurrent.Callable;
 @Slf4j
 public class SshWorker implements Callable<List<SidData>> {
   @Override
-  public List<SidData> call() throws Exception {
-    Thread.sleep(5000);
+  public List<SidData> call() {
     List<SidData> results = new ArrayList<>();
     results.add(new SidData(Instant.now(), BigDecimal.ONE));
     results.add(new SidData(Instant.now(),BigDecimal.TEN));
-    log.debug("SSH data collected: {}", results);
     return results;
   }
 }

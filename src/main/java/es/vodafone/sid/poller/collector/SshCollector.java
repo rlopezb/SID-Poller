@@ -18,7 +18,7 @@ public class SshCollector implements Callable<List<SidData>> {
   private final SshWorkersService sshWorkersService;
 
   @Override
-  public List<SidData> call() throws Exception {
+  public List<SidData> call() {
     List<SshWorker> workers = new ArrayList<>();
     workers.add(new SshWorker());
     workers.add(new SshWorker());

@@ -6,14 +6,14 @@ sid:
     collector:
       snmp:
         cron: "0 0/2 * * * *"
-        collectorTimeout: 180000
-        workerTimeout: 5000
+        collectorTimeout: 1000
+        workerTimeout: 100
         size: 10
         queue: 1000
       ssh:
         cron: "0 1/2 * * * *"
-        collectorTimeout: 180000
-        workerTimeout: 5000
+        collectorTimeout: 1000
+        workerTimeout: 100
         size: 40
         queue: 1000
 logging:

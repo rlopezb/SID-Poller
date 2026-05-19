@@ -23,19 +23,15 @@ class SnmpCollectorService {
     this.executor = Executors.newSingleThreadExecutor();
   }
 
-  public List<SidData> collect() {
+  public void collect() {
     Future<List<SidData>> future = executor.submit(snmpCollector);
-    List<SidData> result = null;
+    List<SidData> result = new ArrayList<>();
     try {
-      result = new ArrayList<>(future.get(snmpCollectorConfiguration.collectorTimeout(), TimeUnit.MILLISECONDS));
+      result.addAll(future.get(snmpCollectorConfiguration.collectorTimeout(), TimeUnit.MILLISECONDS));
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       future.cancel(true);
       log.error("SnmpCollectorService collect failed ({})", e.getClass().getSimpleName());
     }
-    return result;
-  }
-
-  public void shutdown() {
-    executor.shutdownNow();
+    log.debug("SnmpCollectorService collect results with size: {}", result.size());
   }
 }

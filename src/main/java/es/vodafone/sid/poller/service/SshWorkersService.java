@@ -42,7 +42,7 @@ public class SshWorkersService {
         result = new ArrayList<>(future.get(sshCollectorConfiguration.workerTimeout(), TimeUnit.MILLISECONDS));
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         future.cancel(true);
-        log.error("SshWorkersService collect failed ({})", e.getClass().getSimpleName());
+        log.error("SshWorkersService get failed ({})", e.getClass().getSimpleName());
       }
       results.addAll(result);
     });

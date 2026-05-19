@@ -42,7 +42,7 @@ public class SnmpWorkersService {
         result = new ArrayList<>(future.get(snmpCollectorConfiguration.workerTimeout(), TimeUnit.MILLISECONDS));
       } catch (InterruptedException | ExecutionException | TimeoutException e) {
         future.cancel(true);
-        log.error("SnmpWorkersService collect failed ({})", e.getClass().getSimpleName());
+        log.error("SnmpWorkersService get failed ({})", e.getClass().getSimpleName());
       }
       results.addAll(result);
     });
