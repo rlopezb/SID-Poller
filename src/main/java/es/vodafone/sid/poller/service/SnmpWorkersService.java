@@ -19,14 +19,7 @@ public class SnmpWorkersService {
 
   SnmpWorkersService(SnmpCollectorConfiguration snmpCollectorConfiguration) {
     this.snmpCollectorConfiguration = snmpCollectorConfiguration;
-    this.executor = new ThreadPoolExecutor(
-        snmpCollectorConfiguration.size(),
-        snmpCollectorConfiguration.size(),
-        snmpCollectorConfiguration.workerTimeout(),
-        TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(snmpCollectorConfiguration.size() * 5),
-        Thread.ofVirtual().factory(),
-        new ThreadPoolExecutor.DiscardPolicy());
+    this.executor = Executors.newFixedThreadPool(snmpCollectorConfiguration.size(), Thread.ofVirtual().factory());
   }
 
   public List<SidData> get(List<SnmpWorker> workers){

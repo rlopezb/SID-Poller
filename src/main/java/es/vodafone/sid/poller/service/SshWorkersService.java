@@ -19,14 +19,7 @@ public class SshWorkersService {
 
   SshWorkersService(SshCollectorConfiguration sshCollectorConfiguration) {
     this.sshCollectorConfiguration = sshCollectorConfiguration;
-    this.executor = new ThreadPoolExecutor(
-        sshCollectorConfiguration.size(),
-        sshCollectorConfiguration.size(),
-        sshCollectorConfiguration.workerTimeout(),
-        TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(sshCollectorConfiguration.size() * 5),
-        Thread.ofVirtual().factory(),
-        new ThreadPoolExecutor.DiscardPolicy());
+    this.executor = Executors.newFixedThreadPool(sshCollectorConfiguration.size(), Thread.ofVirtual().factory());
   }
 
   public List<SidData> get(List<SshWorker> workers){
