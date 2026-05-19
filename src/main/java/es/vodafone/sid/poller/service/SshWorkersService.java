@@ -4,7 +4,6 @@ import es.vodafone.sid.poller.config.SshCollectorConfiguration;
 import es.vodafone.sid.poller.model.SidData;
 import es.vodafone.sid.poller.worker.SshWorker;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
