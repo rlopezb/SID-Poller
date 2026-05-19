@@ -20,23 +20,14 @@ class SshCollectorService {
   public SshCollectorService(SshCollector sshCollector, SshCollectorConfiguration sshCollectorConfiguration) {
     this.sshCollector = sshCollector;
     this.sshCollectorConfiguration = sshCollectorConfiguration;
-    this.executor = Executors.newVirtualThreadPerTaskExecutor();
-//    this.executor = new ThreadPoolExecutor(
-//        collectorConfiguration.size(),
-//        collectorConfiguration.size(),
-//        collectorConfiguration.timeout(),
-//        TimeUnit.MILLISECONDS,
-//        new ArrayBlockingQueue<>(collectorConfiguration.size()),
-//        Thread.ofVirtual().factory(),
-//        new ThreadPoolExecutor.CallerRunsPolicy()
-//        );
+    this.executor = Executors.newSingleThreadExecutor();
   }
 
   public List<SidData> collect() {
     Future<List<SidData>> future = executor.submit(sshCollector);
     List<SidData> result = null;
     try {
-      result = new ArrayList<>(future.get(sshCollectorConfiguration.timeout(), TimeUnit.MILLISECONDS));
+      result = new ArrayList<>(future.get(sshCollectorConfiguration.collectorTimeout(), TimeUnit.MILLISECONDS));
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       future.cancel(true);
       log.error("SshCollectorService collect failed ({})", e.getClass().getSimpleName());

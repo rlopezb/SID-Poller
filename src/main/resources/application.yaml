@@ -6,19 +6,16 @@ sid:
     collector:
       snmp:
         cron: "0 0/2 * * * *"
-        timeout: 1800
+        collectorTimeout: 180000
+        workerTimeout: 5000
         size: 10
         queue: 1000
       ssh:
         cron: "0 1/2 * * * *"
-        timeout: 1800
+        collectorTimeout: 180000
+        workerTimeout: 5000
         size: 40
         queue: 1000
-    worker:
-      snmp:
-        timeout: 10000
-      ssh:
-        timeout: 10000
 logging:
   level:
     es:

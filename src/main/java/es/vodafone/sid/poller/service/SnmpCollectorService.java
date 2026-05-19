@@ -20,14 +20,14 @@ class SnmpCollectorService {
   public SnmpCollectorService(SnmpCollector snmpCollector, SnmpCollectorConfiguration snmpCollectorConfiguration) {
     this.snmpCollector = snmpCollector;
     this.snmpCollectorConfiguration = snmpCollectorConfiguration;
-    this.executor = Executors.newVirtualThreadPerTaskExecutor();
+    this.executor = Executors.newSingleThreadExecutor();
   }
 
   public List<SidData> collect() {
     Future<List<SidData>> future = executor.submit(snmpCollector);
     List<SidData> result = null;
     try {
-      result = new ArrayList<>(future.get(snmpCollectorConfiguration.timeout(), TimeUnit.MILLISECONDS));
+      result = new ArrayList<>(future.get(snmpCollectorConfiguration.collectorTimeout(), TimeUnit.MILLISECONDS));
     } catch (InterruptedException | ExecutionException | TimeoutException e) {
       future.cancel(true);
       log.error("SnmpCollectorService collect failed ({})", e.getClass().getSimpleName());

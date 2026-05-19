@@ -1,13 +1,13 @@
 package es.vodafone.sid.poller.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
 
 @ConfigurationProperties(prefix = "sid.poller.collector.snmp")
-public record SnmpCollectorConfiguration (
+public record SnmpCollectorConfiguration(
     String name,
     String cron,
-    long timeout,
+    long collectorTimeout,
+    long workerTimeout,
     int size,
     int queue
 ) {

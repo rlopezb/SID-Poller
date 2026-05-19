@@ -1,32 +1,28 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.config.SnmpCollectorConfiguration;
-import es.vodafone.sid.poller.config.SnmpWorkerConfiguration;
 import es.vodafone.sid.poller.model.SidData;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tomcat.util.threads.ThreadPoolExecutor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Service
 @Slf4j
-class SnmpWorkerService {
+public class SnmpWorkersService {
   private final ExecutorService executor;
   private final SnmpCollectorConfiguration snmpCollectorConfiguration;
-  private final SnmpWorkerConfiguration snmpWorkerConfiguration;
 
-  SnmpWorkerService(SnmpCollectorConfiguration snmpCollectorConfiguration, SnmpWorkerConfiguration snmpWorkerConfiguration) {
-    this.snmpWorkerConfiguration = snmpWorkerConfiguration;
+  SnmpWorkersService(SnmpCollectorConfiguration snmpCollectorConfiguration) {
     this.snmpCollectorConfiguration = snmpCollectorConfiguration;
     this.executor = new ThreadPoolExecutor(
         snmpCollectorConfiguration.size(),
         snmpCollectorConfiguration.size(),
-        snmpWorkerConfiguration.timeout(),
+        snmpCollectorConfiguration.workerTimeout(),
         TimeUnit.MILLISECONDS,
         new ArrayBlockingQueue<>(snmpCollectorConfiguration.size()),
         Thread.ofVirtual().factory(),
@@ -34,8 +30,22 @@ class SnmpWorkerService {
   }
 
   public List<SidData> get(List<SnmpWorker> workers){
-    List<SidData> result = null;
-
-    return  result;
+    List<Future<List<SidData>>> futures = new ArrayList<>();
+    workers.forEach(worker -> {
+      Future<List<SidData>> future = executor.submit(worker);
+      futures.add(future);
+    });
+    List<SidData> results = new ArrayList<>();
+    futures.forEach(future -> {
+      List<SidData> result = new ArrayList<>();
+      try {
+        result = new ArrayList<>(future.get(snmpCollectorConfiguration.workerTimeout(), TimeUnit.MILLISECONDS));
+      } catch (InterruptedException | ExecutionException | TimeoutException e) {
+        future.cancel(true);
+        log.error("SnmpWorkersService collect failed ({})", e.getClass().getSimpleName());
+      }
+      results.addAll(result);
+    });
+    return results;
   }
 }
