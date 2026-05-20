@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.concurrent.*;
 
 @Slf4j
-public class CollectorService {
+public class CollectorsService {
 
   private final ExecutorService executor;
   private final Callable<List<SidData>> collector;
   private final long collectorTimeout;
 
-  public CollectorService(Callable<List<SidData>> collector, long collectorTimeout) {
+  public CollectorsService(Callable<List<SidData>> collector, long collectorTimeout) {
     this.collector = collector;
     this.collectorTimeout = collectorTimeout;
     this.executor = Executors.newSingleThreadExecutor();

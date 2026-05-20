@@ -2,6 +2,7 @@ package es.vodafone.sid.poller.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -9,12 +10,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class SchedulerService {
-  private final CollectorService snmpCollectorService;
-  private final CollectorService sshCollectorService;
+  private final CollectorsService snmpCollectorsService;
+  private final CollectorsService sshCollectorsService;
   private final AtomicBoolean snmpCollectorRunning = new AtomicBoolean(false);
   private final AtomicBoolean sshCollectorRunning = new AtomicBoolean(false);
+
+  public SchedulerService(
+      @Qualifier("snmpCollectorService") CollectorsService snmpCollectorsService,
+      @Qualifier("sshCollectorService") CollectorsService sshCollectorsService) {
+    this.snmpCollectorsService = snmpCollectorsService;
+    this.sshCollectorsService = sshCollectorsService;
+  }
 
   @Scheduled(cron = "${sid.poller.collector.snmp.cron}")
   public void collectSnmp() {
@@ -23,7 +30,7 @@ public class SchedulerService {
       return;
     }
     try {
-      snmpCollectorService.collect();
+      snmpCollectorsService.collect();
     } finally {
       snmpCollectorRunning.set(false);
     }
@@ -36,7 +43,7 @@ public class SchedulerService {
       return;
     }
     try {
-      sshCollectorService.collect();
+      sshCollectorsService.collect();
     } finally {
       sshCollectorRunning.set(false);
     }
