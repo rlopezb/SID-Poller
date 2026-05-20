@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 @RequiredArgsConstructor
 public class SchedulerService {
-  private final SnmpCollectorService snmpCollectorService;
-  private final SshCollectorService sshCollectorService;
+  private final CollectorService snmpCollectorService;
+  private final CollectorService sshCollectorService;
   private final AtomicBoolean snmpCollectorRunning = new AtomicBoolean(false);
   private final AtomicBoolean sshCollectorRunning = new AtomicBoolean(false);
 
