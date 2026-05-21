@@ -40,29 +40,25 @@ public class WorkersService {
   }
 
   public List<SidData> get(List<Callable<List<SidData>>> workers) {
-    List<Future<List<SidData>>> futures = workers.stream()
-        .map(executor::submit)
-        .toList();
-
     List<SidData> results = new ArrayList<>();
-    for (Future<List<SidData>> future : futures) {
-      try {
-        List<SidData> sidDataList = future.get(workerTimeout, TimeUnit.MILLISECONDS);
-        if (sidDataList != null) {
-          results.addAll(sidDataList);
-        }
-      } catch (InterruptedException e) {
-        future.cancel(true);
-        log.error("{} worker interrupted", name);
-        Thread.currentThread().interrupt();
-      } catch (ExecutionException e) {
-        future.cancel(true);
-        log.error("{} worker failed", name, e.getCause());
-      } catch (TimeoutException e) {
-        future.cancel(true);
-        log.info("{} worker timeout after {} ms", name, workerTimeout, e);
-      }
-    }
+    workers.stream()
+        .map(executor::submit)
+        .forEach(future -> {
+          try {
+            List<SidData> data = future.get(workerTimeout, TimeUnit.MILLISECONDS);
+            if (data != null) results.addAll(data);
+          } catch (InterruptedException e) {
+            future.cancel(true);
+            log.error("{} worker interrupted", name);
+            Thread.currentThread().interrupt();
+          } catch (ExecutionException e) {
+            future.cancel(true);
+            log.error("{} worker failed", name, e.getCause());
+          } catch (TimeoutException e) {
+            future.cancel(true);
+            log.info("{} worker timeout after {} ms", name, workerTimeout);
+          }
+        });
     return results;
   }
 

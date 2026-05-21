@@ -3,6 +3,7 @@ package es.vodafone.sid.poller.service;
 import es.vodafone.sid.poller.collector.Collector;
 import es.vodafone.sid.poller.collector.CollectorFactory;
 import es.vodafone.sid.poller.config.PollerConfiguration;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
@@ -17,12 +18,14 @@ public class SchedulerService implements SchedulingConfigurer {
   private final List<CollectorsService> collectors;
   public SchedulerService(PollerConfiguration pollerConfiguration) {
     this.collectors = pollerConfiguration.getCollectors().stream()
-        .map(config -> {
-          WorkersService workersService = new WorkersService(config.getWorkerTimeout(), config.getName());
-          Collector collector = CollectorFactory.create(config.getProtocol(), workersService);
-          return new CollectorsService(collector, config.getCollectorTimeout(), config.getName(), config.getCron());
-        })
+        .map(this::createCollector)
         .toList();
+  }
+
+  private CollectorsService createCollector(PollerConfiguration.CollectorConfiguration config) {
+    WorkersService workers = new WorkersService(config.getWorkerTimeout(), config.getName());
+    Collector collector = CollectorFactory.create(config.getProtocol(), workers);
+    return new CollectorsService(collector, config.getCollectorTimeout(), config.getName(), config.getCron());
   }
 
   @Override
@@ -30,5 +33,10 @@ public class SchedulerService implements SchedulingConfigurer {
     collectors.forEach(collector ->
         registrar.addCronTask(collector::collect, collector.getCron())
     );
+  }
+
+  @PreDestroy
+  public void shutdown() {
+    collectors.forEach(CollectorsService::shutdown);
   }
 }
