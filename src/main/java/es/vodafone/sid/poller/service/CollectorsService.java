@@ -23,18 +23,26 @@ public class CollectorsService {
     this.collector = collector;
     this.collectorTimeout = collectorTimeout;
     this.cron = cron;
-    this.executor = Executors.newSingleThreadExecutor();
+    this.executor = Executors.newSingleThreadExecutor(r -> {
+      Thread t = new Thread(r, "CollectorsService-" + name);
+      t.setDaemon(false);
+      return t;
+    });
   }
 
   public void collect() {
     Future<List<SidData>> future = executor.submit(collector);
     try {
       List<SidData> result = future.get(collectorTimeout, TimeUnit.MILLISECONDS);
-      log.debug("{} collector results with size: {}", name, result.size());
+      if (result != null) {
+        log.debug("{} collector results with size: {}", name, result.size());
+      } else {
+        log.warn("{} collector returned null", name);
+      }
       // TODO: persistir/publicar result
     } catch (InterruptedException e) {
       future.cancel(true);
-      log.error("{} collector interrupted", name);
+      log.warn("{} collector interrupted", name, e);
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
       future.cancel(true);
