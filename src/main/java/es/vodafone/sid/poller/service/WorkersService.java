@@ -43,7 +43,7 @@ public class WorkersService {
 
   @PreDestroy
   public void shutdown() {
-    log.info("Shutting down {} WorkersService executor", Thread.currentThread().getName());
+    log.info("Shutting down {} WorkersService executor", name);
     executor.shutdown();
     try {
       if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {

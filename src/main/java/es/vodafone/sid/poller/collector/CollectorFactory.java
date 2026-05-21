@@ -3,7 +3,6 @@ package es.vodafone.sid.poller.collector;
 import es.vodafone.sid.poller.service.WorkersService;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
-import es.vodafone.sid.poller.worker.WorkersSupplier;
 
 import java.util.List;
 

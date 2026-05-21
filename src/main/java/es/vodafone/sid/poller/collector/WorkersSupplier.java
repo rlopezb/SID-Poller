@@ -1,4 +1,4 @@
-package es.vodafone.sid.poller.worker;
+package es.vodafone.sid.poller.collector;
 
 import es.vodafone.sid.poller.model.SidData;
 

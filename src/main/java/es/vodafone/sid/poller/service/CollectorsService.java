@@ -2,14 +2,14 @@ package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.SidData;
 import jakarta.annotation.PreDestroy;
-import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.concurrent.*;
 
 @Slf4j
-@Data
+@Getter
 public class CollectorsService {
   private final ExecutorService executor;
   private final String name;
