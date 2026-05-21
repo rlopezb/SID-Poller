@@ -42,7 +42,7 @@ public class CollectorsService {
       // TODO: persistir/publicar result
     } catch (InterruptedException e) {
       future.cancel(true);
-      log.warn("{} collector interrupted: {}", name, e.getMessage(), e);
+      log.error("{} collector interrupted", name, e);
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
       future.cancel(true);
