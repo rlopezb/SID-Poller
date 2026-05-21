@@ -47,14 +47,20 @@ public class WorkersService {
     List<SidData> results = new ArrayList<>();
     for (Future<List<SidData>> future : futures) {
       try {
-        results.addAll(future.get(workerTimeout, TimeUnit.MILLISECONDS));
+        List<SidData> sidDataList = future.get(workerTimeout, TimeUnit.MILLISECONDS);
+        if (sidDataList != null) {
+          results.addAll(sidDataList);
+        }
       } catch (InterruptedException e) {
         future.cancel(true);
         log.error("{} worker interrupted", name);
         Thread.currentThread().interrupt();
-      } catch (ExecutionException | TimeoutException e) {
+      } catch (ExecutionException e) {
         future.cancel(true);
-        log.error("{} worker failed ({})", name, e.getClass().getSimpleName());
+        log.error("{} worker failed", name, e.getCause());
+      } catch (TimeoutException e) {
+        future.cancel(true);
+        log.info("{} worker timeout after {} ms", name, workerTimeout, e);
       }
     }
     return results;
