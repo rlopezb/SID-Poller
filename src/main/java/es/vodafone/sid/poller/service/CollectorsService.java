@@ -9,10 +9,11 @@ import java.util.List;
 import java.util.concurrent.*;
 
 @Slf4j
-@Getter
 public class CollectorsService {
   private final ExecutorService executor;
+  @Getter
   private final String name;
+  @Getter
   private final String cron;
   private final Callable<List<SidData>> collector;
   private final long collectorTimeout;

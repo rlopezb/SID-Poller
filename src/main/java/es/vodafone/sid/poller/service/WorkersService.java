@@ -47,7 +47,7 @@ public class WorkersService {
     executor.shutdown();
     try {
       if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-        log.warn("{} executor did not terminate, forcing shutdown", Thread.currentThread().getName());
+        log.warn("{} executor did not terminate, forcing shutdown", name);
         executor.shutdownNow();
       }
     } catch (InterruptedException e) {
