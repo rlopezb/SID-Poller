@@ -3,19 +3,19 @@ spring:
     name: Poller
 sid:
   poller:
-    collector:
-      snmp:
+    collectors:
+      - name: SNMP
+        protocol: SNMP
         cron: "0 0/2 * * * *"
-        collectorTimeout: 1000
-        workerTimeout: 100
+        collectorTimeout: 5000
+        workerTimeout: 3000
         size: 10
-        queue: 1000
-      ssh:
+      - name: SSH
+        protocol: SSH
         cron: "0 1/2 * * * *"
-        collectorTimeout: 1000
-        workerTimeout: 100
+        collectorTimeout: 5000
+        workerTimeout: 3000
         size: 40
-        queue: 1000
 logging:
   level:
     es:

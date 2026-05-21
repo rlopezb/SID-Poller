@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class CollectorConfiguration {
   private String name;
+  private String protocol;
   private String cron;
   private long collectorTimeout;
   private long workerTimeout;

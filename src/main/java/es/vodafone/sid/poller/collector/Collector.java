@@ -5,20 +5,20 @@ import es.vodafone.sid.poller.service.WorkersService;
 
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
-public abstract class Collector<W extends Callable<List<SidData>>>
-    implements Callable<List<SidData>> {
+public class Collector implements Callable<List<SidData>> {
 
-  private final WorkersService<W> workersService;
+  private final WorkersService workersService;
+  private final Supplier<List<Callable<List<SidData>>>> workersSupplier;
 
-  protected Collector(WorkersService<W> workersService) {
+  public Collector(WorkersService workersService, Supplier<List<Callable<List<SidData>>>> workersSupplier) {
     this.workersService = workersService;
+    this.workersSupplier = workersSupplier;
   }
-
-  protected abstract List<W> createWorkers();
 
   @Override
   public List<SidData> call() {
-    return workersService.get(createWorkers());
+    return workersService.get(workersSupplier.get());
   }
 }

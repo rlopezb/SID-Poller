@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 @Slf4j
-public class WorkersService<W extends Callable<List<SidData>>> {
+public class WorkersService {
   private final ExecutorService executor;
   private final long workerTimeout;
 
@@ -18,7 +18,7 @@ public class WorkersService<W extends Callable<List<SidData>>> {
     this.workerTimeout = workerTimeout;
   }
 
-  public List<SidData> get(List<W> workers) {
+  public List<SidData> get(List<Callable<List<SidData>>> workers) {
     List<Future<List<SidData>>> futures = workers.stream()
         .map(executor::submit)
         .toList();
