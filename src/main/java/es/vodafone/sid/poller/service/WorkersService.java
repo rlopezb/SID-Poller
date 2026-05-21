@@ -11,11 +11,13 @@ import java.util.concurrent.*;
 @Slf4j
 public class WorkersService {
   private final ExecutorService executor;
+  private final String name;
   private final long workerTimeout;
 
-  public WorkersService(long workerTimeout) {
-    this.executor = Executors.newVirtualThreadPerTaskExecutor();
+  public WorkersService(long workerTimeout, String name) {
     this.workerTimeout = workerTimeout;
+    this.name = name;
+    this.executor = Executors.newVirtualThreadPerTaskExecutor();
   }
 
   public List<SidData> get(List<Callable<List<SidData>>> workers) {
@@ -29,11 +31,11 @@ public class WorkersService {
         results.addAll(future.get(workerTimeout, TimeUnit.MILLISECONDS));
       } catch (InterruptedException e) {
         future.cancel(true);
-        log.error("{} worker interrupted", Thread.currentThread().getName());
+        log.error("{} worker interrupted", name);
         Thread.currentThread().interrupt();
       } catch (ExecutionException | TimeoutException e) {
         future.cancel(true);
-        log.error("{} worker failed ({})", Thread.currentThread().getName(), e.getClass().getSimpleName());
+        log.error("{} worker failed ({})", name, e.getClass().getSimpleName());
       }
     }
     return results;
