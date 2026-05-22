@@ -40,10 +40,20 @@ public class WorkersService {
   }
 
   public List<SidData> get(List<Callable<List<SidData>>> workers) {
+
+    List<Future<List<SidData>>> futures = null;
+    try {
+      futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
+    } catch (InterruptedException e) {
+      log.error("{} executor interrupted", name);
+      Thread.currentThread().interrupt();
+    }
     List<SidData> results = new ArrayList<>();
-    workers.stream()
-        .map(executor::submit)
-        .forEach(future -> {
+    if (futures != null) {
+      for (Future<List<SidData>> future : futures) {
+        if (future.isCancelled()) {
+          log.info("{} worker was cancelled", name);
+        } else {
           try {
             List<SidData> data = future.get(workerTimeout, TimeUnit.MILLISECONDS);
             if (data != null) results.addAll(data);
@@ -58,7 +68,11 @@ public class WorkersService {
             future.cancel(true);
             log.info("{} worker timeout after {} ms", name, workerTimeout);
           }
-        });
+        }
+      }
+    } else {
+      log.warn("{} no workers were executed", name);
+    }
     return results;
   }
 

@@ -11,8 +11,20 @@ import java.util.concurrent.Callable;
 
 @Slf4j
 public class SshWorker implements Callable<List<SidData>> {
+  private static final int MAX_DELAY_MS = 5000;
+
   @Override
   public List<SidData> call() {
+    long delay = (long) (Math.random() * MAX_DELAY_MS);
+    log.debug("SSH worker sleeping for {} ms", delay);
+    try {
+      Thread.sleep(delay);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.warn("SSH worker interrupted during sleep, returning empty result");
+      return List.of();
+    }
+
     List<SidData> results = new ArrayList<>();
     results.add(new SidData(Instant.now(), BigDecimal.ONE));
     results.add(new SidData(Instant.now(),BigDecimal.TEN));

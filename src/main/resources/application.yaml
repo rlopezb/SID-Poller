@@ -7,13 +7,13 @@ sid:
       - name: SNMP
         protocol: SNMP
         cron: "0 0/2 * * * *"
-        collectorTimeout: 5000
+        collectorTimeout: 300000
         workerTimeout: 3000
         size: 10
       - name: SSH
         protocol: SSH
         cron: "0 1/2 * * * *"
-        collectorTimeout: 5000
+        collectorTimeout: 300000
         workerTimeout: 3000
         size: 40
 logging:
