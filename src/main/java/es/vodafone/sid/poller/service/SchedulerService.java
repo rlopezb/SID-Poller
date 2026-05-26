@@ -5,6 +5,7 @@ import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
@@ -16,17 +17,12 @@ import java.util.concurrent.Callable;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class SchedulerService implements SchedulingConfigurer {
   private final CollectorFactory collectorFactory;
   private final MetricRepository metricRepository;
-  private final List<CollectorService> collectorServices;
-  public SchedulerService(CollectorFactory collectorFactory, CollectorRepository collectorRepository, MetricRepository metricRepository) {
-    this.collectorFactory = collectorFactory;
-    this.metricRepository = metricRepository;
-    this.collectorServices = collectorRepository.findAll().stream()
-        .map(this::createCollectorService)
-        .toList();
-  }
+  private final CollectorRepository collectorRepository;
+  private List<CollectorService> collectorServices;
 
   private CollectorService createCollectorService(CollectorRecord collectorRecord) {
     WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
@@ -40,6 +36,9 @@ public class SchedulerService implements SchedulingConfigurer {
 
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
+    this.collectorServices = collectorRepository.findAll().stream()
+        .map(this::createCollectorService)
+        .toList();
     collectorServices.forEach(collector ->
         registrar.addCronTask(collector::collect, collector.getCollectorRecord().cron())
     );

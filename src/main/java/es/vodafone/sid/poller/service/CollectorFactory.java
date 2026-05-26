@@ -12,7 +12,6 @@ import java.util.function.Supplier;
 
 @Component
 public class CollectorFactory {
-
   @FunctionalInterface
   private interface WorkersSupplier {
     List<Callable<List<Metric>>> get();
