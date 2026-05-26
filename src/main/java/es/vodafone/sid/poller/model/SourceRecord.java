@@ -2,9 +2,10 @@ package es.vodafone.sid.poller.model;
 
 import java.time.OffsetDateTime;
 
-public record Metric(
-    OffsetDateTime instant,
-    short srcId,
+public record SourceRecord(
+    short id,
+    String name,
+    String description,
     short elementId,
     short elementTypeId,
     short siteId,
@@ -15,6 +16,11 @@ public record Metric(
     short groupId,
     short serviceId,
     short serviceTypeId,
-    double value
+    short collectorId,
+    short discovererId,
+    String address,
+    String capture,
+    OffsetDateTime instant,
+    double cache
 ) {
 }

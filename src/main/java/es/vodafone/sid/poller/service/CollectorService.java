@@ -1,8 +1,9 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.CollectorRecord;
-import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.repository.MetricRepository;
+import es.vodafone.sid.poller.repository.SourceRepository;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,10 +15,11 @@ public class CollectorService {
   private final ExecutorService executor;
   @Getter
   private final CollectorRecord collectorRecord;
-  private final Callable<List<Metric>> collector;
+  private final Callable<List<MetricRecord>> collector;
   private final MetricRepository metricRepository;
+  private final SourceRepository sourceRepository;
 
-  public CollectorService(Callable<List<Metric>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
+  public CollectorService(Callable<List<MetricRecord>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository, SourceRepository sourceRepository) {
     this.collectorRecord = collectorRecord;
     this.collector = collector;
     this.executor = Executors.newSingleThreadExecutor(r -> {
@@ -26,12 +28,13 @@ public class CollectorService {
       return t;
     });
     this.metricRepository = metricRepository;
+    this.sourceRepository = sourceRepository;
   }
 
   public void collect() {
-    Future<List<Metric>> future = executor.submit(collector);
+    Future<List<MetricRecord>> future = executor.submit(collector);
     try {
-      List<Metric> metrics = future.get(collectorRecord.collectorTimeout(), TimeUnit.MILLISECONDS);
+      List<MetricRecord> metrics = future.get(collectorRecord.collectorTimeout(), TimeUnit.MILLISECONDS);
       if (metrics != null) {
         log.debug("{} collector metrics with size: {}", collectorRecord.name(), metrics.size());
         metricRepository.insert(metrics);

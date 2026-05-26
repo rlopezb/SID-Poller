@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.MetricRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -38,24 +38,24 @@ public class WorkersService {
     };
   }
 
-  public List<Metric> get(List<Callable<List<Metric>>> workers) {
+  public List<MetricRecord> get(List<Callable<List<MetricRecord>>> workers) {
 
-    List<Future<List<Metric>>> futures = null;
+    List<Future<List<MetricRecord>>> futures = null;
     try {
       futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       log.error("{} executor interrupted", name);
       Thread.currentThread().interrupt();
     }
-    List<Metric> metrics = new ArrayList<>();
+    List<MetricRecord> workersMetricRecords = new ArrayList<>();
     if (futures != null) {
-      for (Future<List<Metric>> future : futures) {
+      for (Future<List<MetricRecord>> future : futures) {
         if (future.isCancelled()) {
           log.info("{} worker was cancelled", name);
         } else {
           try {
-            List<Metric> metric = future.get(workerTimeout, TimeUnit.MILLISECONDS);
-            if (metric != null) metrics.addAll(metric);
+            List<MetricRecord> workerMetricRecords = future.get(workerTimeout, TimeUnit.MILLISECONDS);
+            if (workerMetricRecords != null) workersMetricRecords.addAll(workerMetricRecords);
           } catch (InterruptedException e) {
             future.cancel(true);
             log.error("{} worker interrupted", name);
@@ -72,7 +72,7 @@ public class WorkersService {
     } else {
       log.warn("{} no workers were executed", name);
     }
-    return metrics;
+    return workersMetricRecords;
   }
 
   public void shutdown() {

@@ -1,9 +1,10 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.CollectorRecord;
-import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
+import es.vodafone.sid.poller.repository.SourceRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class SchedulerService implements SchedulingConfigurer {
   private final CollectorFactory collectorFactory;
   private final MetricRepository metricRepository;
   private final CollectorRepository collectorRepository;
+  private final SourceRepository sourceRepository;
 
   private List<CollectorService> collectorServices = List.of();
   private final List<WorkersService> workersServices = new ArrayList<>();
@@ -30,8 +32,8 @@ public class SchedulerService implements SchedulingConfigurer {
   private CollectorService createCollectorService(CollectorRecord collectorRecord) {
     WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
     workersServices.add(workersService);
-    Callable<List<Metric>> collector = collectorFactory.create(collectorRecord.protocol(), workersService);
-    return new CollectorService(collector, collectorRecord, metricRepository);
+    Callable<List<MetricRecord>> collector = collectorFactory.create(collectorRecord.protocol(), workersService);
+    return new CollectorService(collector, collectorRecord, metricRepository, sourceRepository);
   }
 
   @Override
@@ -39,8 +41,8 @@ public class SchedulerService implements SchedulingConfigurer {
     this.collectorServices = collectorRepository.findAll().stream()
         .map(this::createCollectorService)
         .toList();
-    collectorServices.forEach(collector ->
-        registrar.addCronTask(collector::collect, collector.getCollectorRecord().cron())
+    collectorServices.forEach(collectorService ->
+        registrar.addCronTask(collectorService::collect, collectorService.getCollectorRecord().cron())
     );
   }
 
