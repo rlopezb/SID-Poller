@@ -1,21 +1,17 @@
 spring:
   application:
     name: Poller
-sid:
-  poller:
-    collectors:
-      - name: SNMP
-        protocol: SNMP
-        cron: "0 0/2 * * * *"
-        collectorTimeout: 300000
-        workerTimeout: 3000
-        size: 10
-      - name: SSH
-        protocol: SSH
-        cron: "0 1/2 * * * *"
-        collectorTimeout: 300000
-        workerTimeout: 3000
-        size: 40
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sid
+    username: sid
+    password: 25Junio@2005
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 20000
+      pool-name: SIDHikariPool
 logging:
   level:
     es:

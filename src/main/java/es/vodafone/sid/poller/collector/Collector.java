@@ -1,12 +1,12 @@
 package es.vodafone.sid.poller.collector;
 
-import es.vodafone.sid.poller.model.SidData;
+import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.service.WorkersService;
 
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class Collector implements Callable<List<SidData>> {
+public class Collector implements Callable<List<Metric>> {
 
   private final WorkersService workersService;
   private final WorkersSupplier workersSupplier;
@@ -17,7 +17,7 @@ public class Collector implements Callable<List<SidData>> {
   }
 
   @Override
-  public List<SidData> call() {
+  public List<Metric> call() {
     return workersService.get(workersSupplier.get());
   }
 }

@@ -1,33 +1,43 @@
 package es.vodafone.sid.poller.worker;
 
-import es.vodafone.sid.poller.model.SidData;
+import es.vodafone.sid.poller.model.Metric;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.IntStream;
 
 @Slf4j
-public class SnmpWorker implements Callable<List<SidData>> {
-  private static final int MAX_DELAY_MS = 5000;
+public class SnmpWorker implements Callable<List<Metric>> {
+  private static final int METRICS_COUNT = 5;
+  private static final double MIN_VALUE = 0.0;
+  private static final double MAX_VALUE = 1000000.0;
 
+  private short randomShort() {
+    return (short) ThreadLocalRandom.current().nextInt(0, 100);
+  }
   @Override
-  public List<SidData> call(){
-    long delay = (long) (Math.random() * MAX_DELAY_MS);
-    log.debug("SNMP worker sleeping for {} ms", delay);
-    try {
-      Thread.sleep(delay);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.warn("SNMP worker interrupted during sleep, returning empty result");
-      return List.of();
-    }
-
-    List<SidData> results = new ArrayList<>();
-    results.add(new SidData(Instant.now(), BigDecimal.ONE));
-    results.add(new SidData(Instant.now(),BigDecimal.TEN));
-    return results;
+  public List<Metric> call() {
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    return IntStream.range(0, METRICS_COUNT)
+        .mapToObj(_ -> new Metric(
+            now,
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            randomShort(),
+            ThreadLocalRandom.current().nextDouble(MIN_VALUE, MAX_VALUE)
+        ))
+        .toList();
   }
 }

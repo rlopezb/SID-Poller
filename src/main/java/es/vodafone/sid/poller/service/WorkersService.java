@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.model.SidData;
+import es.vodafone.sid.poller.model.Metric;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -39,24 +39,24 @@ public class WorkersService {
     };
   }
 
-  public List<SidData> get(List<Callable<List<SidData>>> workers) {
+  public List<Metric> get(List<Callable<List<Metric>>> workers) {
 
-    List<Future<List<SidData>>> futures = null;
+    List<Future<List<Metric>>> futures = null;
     try {
       futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       log.error("{} executor interrupted", name);
       Thread.currentThread().interrupt();
     }
-    List<SidData> results = new ArrayList<>();
+    List<Metric> metrics = new ArrayList<>();
     if (futures != null) {
-      for (Future<List<SidData>> future : futures) {
+      for (Future<List<Metric>> future : futures) {
         if (future.isCancelled()) {
           log.info("{} worker was cancelled", name);
         } else {
           try {
-            List<SidData> data = future.get(workerTimeout, TimeUnit.MILLISECONDS);
-            if (data != null) results.addAll(data);
+            List<Metric> metric = future.get(workerTimeout, TimeUnit.MILLISECONDS);
+            if (metric != null) metrics.addAll(metric);
           } catch (InterruptedException e) {
             future.cancel(true);
             log.error("{} worker interrupted", name);
@@ -73,7 +73,7 @@ public class WorkersService {
     } else {
       log.warn("{} no workers were executed", name);
     }
-    return results;
+    return metrics;
   }
 
   @PreDestroy

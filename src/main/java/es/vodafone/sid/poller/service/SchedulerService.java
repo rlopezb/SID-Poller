@@ -2,7 +2,9 @@ package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.collector.Collector;
 import es.vodafone.sid.poller.collector.CollectorFactory;
-import es.vodafone.sid.poller.config.PollerConfiguration;
+import es.vodafone.sid.poller.model.CollectorRecord;
+import es.vodafone.sid.poller.repository.CollectorRepository;
+import es.vodafone.sid.poller.repository.MetricRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -15,17 +17,19 @@ import java.util.List;
 @Slf4j
 @Service
 public class SchedulerService implements SchedulingConfigurer {
+  private final MetricRepository metricRepository;
   private final List<CollectorsService> collectors;
-  public SchedulerService(PollerConfiguration pollerConfiguration) {
-    this.collectors = pollerConfiguration.getCollectors().stream()
+  public SchedulerService(CollectorRepository collectorRepository, MetricRepository metricRepository) {
+    this.metricRepository = metricRepository;
+    this.collectors = collectorRepository.findAll().stream()
         .map(this::createCollector)
         .toList();
   }
 
-  private CollectorsService createCollector(PollerConfiguration.CollectorConfiguration config) {
-    WorkersService workers = new WorkersService(config.getWorkerTimeout(), config.getName());
-    Collector collector = CollectorFactory.create(config.getProtocol(), workers);
-    return new CollectorsService(collector, config.getCollectorTimeout(), config.getName(), config.getCron());
+  private CollectorsService createCollector(CollectorRecord collectorRecord) {
+    WorkersService workers = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
+    Collector collector = CollectorFactory.create(collectorRecord.protocol(), workers);
+    return new CollectorsService(collector, collectorRecord.collectorTimeout(), collectorRecord.name(), collectorRecord.cron(), metricRepository);
   }
 
   @Override

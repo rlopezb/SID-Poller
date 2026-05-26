@@ -1,6 +1,7 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.model.SidData;
+import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.repository.MetricRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -15,10 +16,11 @@ public class CollectorsService {
   private final String name;
   @Getter
   private final String cron;
-  private final Callable<List<SidData>> collector;
+  private final Callable<List<Metric>> collector;
   private final long collectorTimeout;
+  private final MetricRepository metricRepository;
 
-  public CollectorsService(Callable<List<SidData>> collector, long collectorTimeout, String name, String cron) {
+  public CollectorsService(Callable<List<Metric>> collector, long collectorTimeout, String name, String cron, MetricRepository metricRepository) {
     this.name = name;
     this.collector = collector;
     this.collectorTimeout = collectorTimeout;
@@ -28,18 +30,19 @@ public class CollectorsService {
       t.setDaemon(false);
       return t;
     });
+    this.metricRepository = metricRepository;
   }
 
   public void collect() {
-    Future<List<SidData>> future = executor.submit(collector);
+    Future<List<Metric>> future = executor.submit(collector);
     try {
-      List<SidData> result = future.get(collectorTimeout, TimeUnit.MILLISECONDS);
-      if (result != null) {
-        log.debug("{} collector results with size: {}", name, result.size());
+      List<Metric> metrics = future.get(collectorTimeout, TimeUnit.MILLISECONDS);
+      if (metrics != null) {
+        log.debug("{} collector metrics with size: {}", name, metrics.size());
       } else {
         log.warn("{} collector returned null", name);
       }
-      // TODO: persistir/publicar result
+      metricRepository.insert(metrics);
     } catch (InterruptedException e) {
       future.cancel(true);
       log.error("{} collector interrupted", name, e);
