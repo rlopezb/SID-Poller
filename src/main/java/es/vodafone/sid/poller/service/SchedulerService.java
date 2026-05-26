@@ -1,8 +1,7 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.collector.Collector;
-import es.vodafone.sid.poller.collector.CollectorFactory;
 import es.vodafone.sid.poller.model.CollectorRecord;
+import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
 import jakarta.annotation.PreDestroy;
@@ -13,34 +12,41 @@ import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 @Slf4j
 @Service
 public class SchedulerService implements SchedulingConfigurer {
+  private final CollectorFactory collectorFactory;
   private final MetricRepository metricRepository;
-  private final List<CollectorsService> collectors;
-  public SchedulerService(CollectorRepository collectorRepository, MetricRepository metricRepository) {
+  private final List<CollectorService> collectorServices;
+  public SchedulerService(CollectorFactory collectorFactory, CollectorRepository collectorRepository, MetricRepository metricRepository) {
+    this.collectorFactory = collectorFactory;
     this.metricRepository = metricRepository;
-    this.collectors = collectorRepository.findAll().stream()
-        .map(this::createCollector)
+    this.collectorServices = collectorRepository.findAll().stream()
+        .map(this::createCollectorService)
         .toList();
   }
 
-  private CollectorsService createCollector(CollectorRecord collectorRecord) {
-    WorkersService workers = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
-    Collector collector = CollectorFactory.create(collectorRecord.protocol(), workers);
-    return new CollectorsService(collector, collectorRecord.collectorTimeout(), collectorRecord.name(), collectorRecord.cron(), metricRepository);
+  private CollectorService createCollectorService(CollectorRecord collectorRecord) {
+    WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
+    Callable<List<Metric>> collector = collectorFactory.create(collectorRecord.protocol(), workersService);
+    return new CollectorService(
+        collector,
+        workersService,
+        collectorRecord,
+        metricRepository);
   }
 
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
-    collectors.forEach(collector ->
-        registrar.addCronTask(collector::collect, collector.getCron())
+    collectorServices.forEach(collector ->
+        registrar.addCronTask(collector::collect, collector.getCollectorRecord().cron())
     );
   }
 
   @PreDestroy
   public void shutdown() {
-    collectors.forEach(CollectorsService::shutdown);
+    collectorServices.forEach(CollectorService::shutdown);
   }
 }

@@ -1,7 +1,6 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.Metric;
-import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -76,7 +75,6 @@ public class WorkersService {
     return metrics;
   }
 
-  @PreDestroy
   public void shutdown() {
     log.info("Shutting down {} WorkersService executor", name);
     executor.shutdown();

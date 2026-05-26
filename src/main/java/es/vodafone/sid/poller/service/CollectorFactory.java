@@ -1,24 +1,30 @@
-package es.vodafone.sid.poller.collector;
+package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.Metric;
-import es.vodafone.sid.poller.service.WorkersService;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
-
+@Component
 public class CollectorFactory {
-  public static Collector create(String protocol, WorkersService workersService) {
-    WorkersSupplier supplier = switch (protocol.toUpperCase()) {
+
+  @FunctionalInterface
+  private interface WorkersSupplier {
+    List<Callable<List<Metric>>> get();
+  }
+
+  public Callable<List<Metric>> create(String protocol, WorkersService workersService) {
+    WorkersSupplier workersSupplier = switch (protocol.toUpperCase()) {
       case "SNMP" -> () -> createWorkers(SnmpWorker::new, 50);
       case "SSH"  -> () -> createWorkers(SshWorker::new, 100);
       default -> throw new IllegalArgumentException("Unknown protocol: " + protocol);
     };
-    return new Collector(workersService, supplier);
+    return () -> workersService.get(workersSupplier.get());
   }
 
   private static List<Callable<List<Metric>>> createWorkers(
