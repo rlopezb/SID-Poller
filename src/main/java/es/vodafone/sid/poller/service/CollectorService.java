@@ -36,10 +36,10 @@ public class CollectorService {
       List<Metric> metrics = future.get(collectorRecord.collectorTimeout(), TimeUnit.MILLISECONDS);
       if (metrics != null) {
         log.debug("{} collector metrics with size: {}", collectorRecord.name(), metrics.size());
+        metricRepository.insert(metrics);
       } else {
         log.warn("{} collector returned null", collectorRecord.name());
       }
-      metricRepository.insert(metrics);
     } catch (InterruptedException e) {
       future.cancel(true);
       log.error("{} collector interrupted", collectorRecord.name(), e);
