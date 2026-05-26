@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -22,16 +23,15 @@ public class SchedulerService implements SchedulingConfigurer {
   private final CollectorFactory collectorFactory;
   private final MetricRepository metricRepository;
   private final CollectorRepository collectorRepository;
-  private List<CollectorService> collectorServices;
+
+  private List<CollectorService> collectorServices = List.of();
+  private final List<WorkersService> workersServices = new ArrayList<>();
 
   private CollectorService createCollectorService(CollectorRecord collectorRecord) {
     WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
+    workersServices.add(workersService);
     Callable<List<Metric>> collector = collectorFactory.create(collectorRecord.protocol(), workersService);
-    return new CollectorService(
-        collector,
-        workersService,
-        collectorRecord,
-        metricRepository);
+    return new CollectorService(collector, collectorRecord, metricRepository);
   }
 
   @Override
@@ -46,6 +46,9 @@ public class SchedulerService implements SchedulingConfigurer {
 
   @PreDestroy
   public void shutdown() {
-    collectorServices.forEach(CollectorService::shutdown);
+    if (collectorServices != null) {
+      collectorServices.forEach(CollectorService::shutdown);
+    }
+    workersServices.forEach(WorkersService::shutdown);
   }
 }

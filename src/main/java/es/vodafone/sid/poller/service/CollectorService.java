@@ -15,13 +15,11 @@ public class CollectorService {
   @Getter
   private final CollectorRecord collectorRecord;
   private final Callable<List<Metric>> collector;
-  private final WorkersService workersService;
   private final MetricRepository metricRepository;
 
-  public CollectorService(Callable<List<Metric>> collector, WorkersService workersService, CollectorRecord collectorRecord, MetricRepository metricRepository) {
+  public CollectorService(Callable<List<Metric>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
     this.collectorRecord = collectorRecord;
     this.collector = collector;
-    this.workersService = workersService;
     this.executor = Executors.newSingleThreadExecutor(r -> {
       Thread t = new Thread(r, "CollectorsService-" + collectorRecord.name());
       t.setDaemon(false);
@@ -62,6 +60,5 @@ public class CollectorService {
       executor.shutdownNow();
       Thread.currentThread().interrupt();
     }
-    workersService.shutdown();
   }
 }
