@@ -1,8 +1,11 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.MetricRecord;
+import es.vodafone.sid.poller.repository.ProtocolRepository;
+import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -11,7 +14,11 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 
 @Component
+@RequiredArgsConstructor
 public class CollectorFactory {
+  private final SourceRepository sourceRepository;
+  private final ProtocolRepository protocolRepository;
+
   @FunctionalInterface
   private interface WorkersSupplier {
     List<Callable<List<MetricRecord>>> get();

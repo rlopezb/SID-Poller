@@ -17,9 +17,8 @@ public class CollectorService {
   private final CollectorRecord collectorRecord;
   private final Callable<List<MetricRecord>> collector;
   private final MetricRepository metricRepository;
-  private final SourceRepository sourceRepository;
 
-  public CollectorService(Callable<List<MetricRecord>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository, SourceRepository sourceRepository) {
+  public CollectorService(Callable<List<MetricRecord>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
     this.collectorRecord = collectorRecord;
     this.collector = collector;
     this.executor = Executors.newSingleThreadExecutor(r -> {
@@ -28,7 +27,6 @@ public class CollectorService {
       return t;
     });
     this.metricRepository = metricRepository;
-    this.sourceRepository = sourceRepository;
   }
 
   public void collect() {

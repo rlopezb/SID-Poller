@@ -24,7 +24,6 @@ public class SchedulerService implements SchedulingConfigurer {
   private final CollectorFactory collectorFactory;
   private final MetricRepository metricRepository;
   private final CollectorRepository collectorRepository;
-  private final SourceRepository sourceRepository;
 
   private List<CollectorService> collectorServices = List.of();
   private final List<WorkersService> workersServices = new ArrayList<>();
@@ -33,7 +32,7 @@ public class SchedulerService implements SchedulingConfigurer {
     WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
     workersServices.add(workersService);
     Callable<List<MetricRecord>> collector = collectorFactory.create(collectorRecord.protocol(), workersService);
-    return new CollectorService(collector, collectorRecord, metricRepository, sourceRepository);
+    return new CollectorService(collector, collectorRecord, metricRepository);
   }
 
   @Override
