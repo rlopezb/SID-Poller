@@ -15,15 +15,7 @@ public class ElementTypeRepository {
 
   private static final RowMapper<ElementTypeRecord> ROW_MAPPER = (rs, _) -> new ElementTypeRecord(
       rs.getShort("id"),
-      rs.getString("name"),
-      rs.getString("ssh_username"),
-      rs.getString("ssh_password"),
-      rs.getString("snmp_username"),
-      rs.getString("snmp_auth_protocol"),
-      rs.getString("snmp_auth_password"),
-      rs.getString("snmp_priv_protocol"),
-      rs.getString("snmp_priv_password"),
-      rs.getString("snmp_security_level")
+      rs.getString("name")
   );
 
   public ElementTypeRecord findById(short id) {

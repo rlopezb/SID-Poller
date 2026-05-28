@@ -1,7 +1,6 @@
 package es.vodafone.sid.poller.model;
 
 public record SnmpConfigRecord(
-    short collectorId,
     short elementTypeId,
     short maxOid,
     short port,

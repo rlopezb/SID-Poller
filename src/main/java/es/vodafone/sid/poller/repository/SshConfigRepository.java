@@ -12,7 +12,6 @@ public class SshConfigRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<SshConfigRecord> ROW_MAPPER = (rs, _) -> new SshConfigRecord(
-      rs.getShort("collector_id"),
       rs.getShort("element_type_id"),
       rs.getShort("port"),
       rs.getString("username"),

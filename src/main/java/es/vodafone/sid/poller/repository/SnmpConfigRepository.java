@@ -12,7 +12,6 @@ public class SnmpConfigRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<SnmpConfigRecord> ROW_MAPPER = (rs, _) -> new SnmpConfigRecord(
-      rs.getShort("collector_id"),
       rs.getShort("element_type_id"),
       rs.getShort("max_oid"),
       rs.getShort("port"),
