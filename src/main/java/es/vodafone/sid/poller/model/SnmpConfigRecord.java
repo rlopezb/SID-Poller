@@ -11,3 +11,5 @@ public record SnmpConfigRecord(
     String privPassword,
     String securityLevel
 ) {}
+
+

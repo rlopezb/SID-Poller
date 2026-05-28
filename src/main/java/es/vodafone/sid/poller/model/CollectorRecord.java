@@ -5,8 +5,8 @@ public record CollectorRecord(
     String name,
     String protocol,
     String cron,
-    long collectorTimeout,
-    long workerTimeout,
+    int collectorTimeout,
+    int workerTimeout,
     short size,
     short queue) {
 }

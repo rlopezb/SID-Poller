@@ -15,7 +15,8 @@ public class SshConfigRepository {
       rs.getShort("element_type_id"),
       rs.getShort("port"),
       rs.getString("username"),
-      rs.getString("password")
+      rs.getString("password"),
+      rs.getLong("timeout")
   );
 
   public SshConfigRecord findByElementTypeId(short elementTypeId) {

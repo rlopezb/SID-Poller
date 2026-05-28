@@ -4,6 +4,7 @@ public record SshConfigRecord(
     short elementTypeId,
     short port,
     String username,
-    String password
+    String password,
+    long timeout
 ) {
 }

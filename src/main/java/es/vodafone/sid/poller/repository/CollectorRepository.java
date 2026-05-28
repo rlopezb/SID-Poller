@@ -18,8 +18,8 @@ public class CollectorRepository {
       rs.getString("name"),
       rs.getString("protocol"),
       rs.getString("cron"),
-      rs.getLong("collector_timeout"),
-      rs.getLong("worker_timeout"),
+      rs.getInt("collector_timeout"),
+      rs.getInt("worker_timeout"),
       rs.getShort("size"),
       rs.getShort("queue")
   );
