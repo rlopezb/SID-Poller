@@ -8,10 +8,12 @@ import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
+import org.snmp4j.Snmp;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
@@ -21,6 +23,8 @@ public class CollectorFactory {
   private final SourceRepository sourceRepository;
   private final ProtocolRepository protocolRepository;
   private final SshClient sshClient;
+  private final Snmp snmp;
+  private final Consumer<ProtocolRecord> snmpUserRegistry;
 
   public Callable<List<MetricRecord>> create(CollectorRecord collector, WorkersService workersService) {
     return switch (collector.protocol().toUpperCase()) {
@@ -57,7 +61,7 @@ public class CollectorFactory {
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       int maxOid = protocol.config().get("maxOid").asInt();
       for (List<SourceRecord> chunk : partition(group, maxOid)) {
-        workers.add(new SnmpWorker(element, chunk, protocol));
+        workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry));
       }
     }
     return workersService.get(workers);

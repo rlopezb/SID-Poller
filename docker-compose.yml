@@ -9,3 +9,14 @@ services:
     ports:
       - "2222:2222"
     restart: unless-stopped
+  snmp-test:
+    image: alpine:latest
+    container_name: snmp-test
+    command: >
+      sh -c "apk add --no-cache net-snmp &&
+             snmpd -f -Lo -C -c /etc/snmpd.conf"
+    volumes:
+      - ./snmpd.conf:/etc/snmpd.conf:ro
+    ports:
+      - "161:161/udp"
+    restart: unless-stopped
