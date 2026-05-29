@@ -1,0 +1,11 @@
+services:
+  ssh-test:
+    image: lscr.io/linuxserver/openssh-server
+    container_name: ssh-test
+    environment:
+      - USER_NAME=admin
+      - USER_PASSWORD=admin123
+      - PASSWORD_ACCESS=true
+    ports:
+      - "2222:2222"
+    restart: unless-stopped

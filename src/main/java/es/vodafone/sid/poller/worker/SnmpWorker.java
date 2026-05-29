@@ -1,6 +1,7 @@
 // worker/SnmpWorker.java
 package es.vodafone.sid.poller.worker;
 
+import es.vodafone.sid.poller.model.ElementRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.model.ProtocolRecord;
 import es.vodafone.sid.poller.model.SourceRecord;
@@ -17,7 +18,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 @RequiredArgsConstructor
 public class SnmpWorker implements Callable<List<MetricRecord>> {
-
+  private final ElementRecord element;
   private final List<SourceRecord> sources;
   private final ProtocolRecord protocol;
 

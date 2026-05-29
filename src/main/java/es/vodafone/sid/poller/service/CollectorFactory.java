@@ -1,74 +1,72 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.model.CollectorRecord;
-import es.vodafone.sid.poller.model.MetricRecord;
-import es.vodafone.sid.poller.model.ProtocolRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.*;
+import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
 import lombok.RequiredArgsConstructor;
+import org.apache.sshd.client.SshClient;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class CollectorFactory {
+  private final ElementRepository elementRepository;
   private final SourceRepository sourceRepository;
   private final ProtocolRepository protocolRepository;
+  private final SshClient sshClient;
 
   public Callable<List<MetricRecord>> create(CollectorRecord collector, WorkersService workersService) {
     return switch (collector.protocol().toUpperCase()) {
-      case "SSH" -> createCollector(collector, workersService, this::createSshWorkers);
-      case "SNMP" -> createCollector(collector, workersService, this::createSnmpWorkers);
+      case "SSH"  -> () -> collectSsh(collector, workersService);
+      case "SNMP" -> () -> collectSnmp(collector, workersService);
       default -> throw new IllegalArgumentException("Unknown protocol: " + collector.protocol());
     };
   }
 
-  private Callable<List<MetricRecord>> createCollector(
-      CollectorRecord collector,
-      WorkersService workersService,
-      BiFunction<List<SourceRecord>, ProtocolRecord, List<Callable<List<MetricRecord>>>> workerBuilder) {
-    return () -> {
-      List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
-      Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
-      Map<Short, List<SourceRecord>> byElement = sources.stream()
-          .collect(Collectors.groupingBy(SourceRecord::elementId));
+  private List<MetricRecord> collectSsh(CollectorRecord collector, WorkersService workersService) {
+    List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+    Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
-      List<Callable<List<MetricRecord>>> workers = byElement.entrySet().stream()
-          .flatMap(entry -> {
-            short elementTypeId = entry.getValue().getFirst().elementTypeId();
-            ProtocolRecord protocol = protocolCache.computeIfAbsent(
-                elementTypeId,
-                id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id)
-            );
-            return workerBuilder.apply(entry.getValue(), protocol).stream();
-          })
-          .toList();
-
-      return workersService.get(workers);
-    };
+    List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
+    for (List<SourceRecord> group : groupByElement(sources)) {
+      ElementRecord element = elementRepository.findById(group.getFirst().elementId());
+      short elementTypeId = element.elementTypeId();
+      ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
+          id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
+      workers.add(new SshWorker(element, group, protocol, sshClient));
+    }
+    return workersService.get(workers);
   }
 
-  private List<Callable<List<MetricRecord>>> createSshWorkers(
-      List<SourceRecord> sources, ProtocolRecord protocol) {
-    return List.of(new SshWorker(sources, protocol));
+  private List<MetricRecord> collectSnmp(CollectorRecord collector, WorkersService workersService) {
+    List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+    Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
+
+    List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
+    for (List<SourceRecord> group : groupByElement(sources)) {
+      ElementRecord element = elementRepository.findById(group.getFirst().elementId());
+      short elementTypeId = element.elementTypeId();
+      ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
+          id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
+      int maxOid = protocol.config().get("maxOid").asInt();
+      for (List<SourceRecord> chunk : partition(group, maxOid)) {
+        workers.add(new SnmpWorker(element, chunk, protocol));
+      }
+    }
+    return workersService.get(workers);
   }
 
-  private List<Callable<List<MetricRecord>>> createSnmpWorkers(
-      List<SourceRecord> sources, ProtocolRecord protocol) {
-    int maxOid = protocol.config().get("maxOid").asInt();
-    return partition(sources, maxOid).stream()
-        .map(chunk -> (Callable<List<MetricRecord>>) new SnmpWorker(chunk, protocol))
-        .toList();
+  private static Collection<List<SourceRecord>> groupByElement(List<SourceRecord> sources) {
+    return sources.stream()
+        .collect(Collectors.groupingBy(SourceRecord::elementId))
+        .values();
   }
 
   private static <T> List<List<T>> partition(List<T> list, int size) {
