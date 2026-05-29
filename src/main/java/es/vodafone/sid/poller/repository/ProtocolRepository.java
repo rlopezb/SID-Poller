@@ -6,27 +6,27 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Repository
 @RequiredArgsConstructor
 public class ProtocolRepository {
   private final JdbcTemplate jdbcTemplate;
-  private static final RowMapper<ProtocolRecord> ROW_MAPPER = (rs, _) -> new ProtocolRecord(
-      rs.getShort("element_type_id"),
-      rs.getString("protocol"),
-      rs.getObject("config", JsonNode.class)
+  private static final RowMapper<ProtocolRecord> ROW_MAPPER = (rs, _) -> {
+    ObjectMapper mapper = new ObjectMapper();
+    String json = rs.getString("config");
+    JsonNode config = mapper.readTree(json);
 
-  );
-
-  public ProtocolRecord getByProtocol(String protocol) {
-    return jdbcTemplate.queryForObject(
-        "select * from protocol where protocol = ?", ROW_MAPPER, protocol
+    return new ProtocolRecord(
+        rs.getShort("element_type_id"),
+        rs.getString("protocol"),
+        config
     );
-  }
+  };
 
-   public ProtocolRecord getByElementTypeId(short elementTypeId) {
+  public ProtocolRecord getByProtocolAndElementTypeId(String protocol, short elementTypeId) {
     return jdbcTemplate.queryForObject(
-        "select * from protocol where element_type_id = ?", ROW_MAPPER, elementTypeId
+        "select * from protocol where protocol = ? and element_type_id = ?", ROW_MAPPER, protocol, elementTypeId
     );
   }
 }

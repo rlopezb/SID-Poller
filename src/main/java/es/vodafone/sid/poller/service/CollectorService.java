@@ -3,7 +3,6 @@ package es.vodafone.sid.poller.service;
 import es.vodafone.sid.poller.model.CollectorRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.repository.MetricRepository;
-import es.vodafone.sid.poller.repository.SourceRepository;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

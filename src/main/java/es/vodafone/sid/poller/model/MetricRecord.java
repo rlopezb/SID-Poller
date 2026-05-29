@@ -1,5 +1,6 @@
 package es.vodafone.sid.poller.model;
 
+import java.math.BigInteger;
 import java.time.OffsetDateTime;
 
 public record MetricRecord(
@@ -15,6 +16,6 @@ public record MetricRecord(
     short groupId,
     short serviceId,
     short serviceTypeId,
-    double value
+    BigInteger value
 ) {
 }

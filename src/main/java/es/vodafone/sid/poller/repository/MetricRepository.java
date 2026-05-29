@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigInteger;
 import java.util.List;
 
 @Repository
@@ -31,7 +32,7 @@ public class MetricRepository {
       ps.setShort(10, metricRecord.groupId());
       ps.setShort(11, metricRecord.serviceId());
       ps.setShort(12, metricRecord.serviceTypeId());
-      ps.setDouble(13, metricRecord.value());
+      ps.setObject(13, metricRecord.value());
     });
   }
 }
