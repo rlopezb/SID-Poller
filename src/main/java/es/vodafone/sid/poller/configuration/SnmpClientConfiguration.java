@@ -20,7 +20,6 @@ import java.util.function.Consumer;
 
 @Configuration
 public class SnmpClientConfiguration {
-  private final Set<String> registeredUsers = ConcurrentHashMap.newKeySet();
 
   @Bean(destroyMethod = "close")
   public Snmp snmp() throws IOException {
@@ -48,23 +47,6 @@ public class SnmpClientConfiguration {
         ));
       }
     };
-  }
-
-  public void registerUserIfAbsent(Snmp snmp, ProtocolRecord protocol) {
-    JsonNode config = protocol.config();
-    String username = config.get("username").asString();
-
-    if (registeredUsers.add(username)) {
-      snmp.getUSM().addUser(
-          new UsmUser(
-              new OctetString(username),
-              resolveAuthProtocol(config.get("authProtocol").asString()),
-              new OctetString(config.get("authPassword").asString()),
-              resolvePrivProtocol(config.get("privProtocol").asString()),
-              new OctetString(config.get("privPassword").asString())
-          )
-      );
-    }
   }
 
   private static OID resolveAuthProtocol(String protocol) {
