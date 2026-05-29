@@ -12,10 +12,9 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class ProtocolRepository {
   private final JdbcTemplate jdbcTemplate;
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   private static final RowMapper<ProtocolRecord> ROW_MAPPER = (rs, _) -> {
-    ObjectMapper mapper = new ObjectMapper();
-    String json = rs.getString("config");
-    JsonNode config = mapper.readTree(json);
+    JsonNode config = OBJECT_MAPPER.readTree(rs.getString("config"));
 
     return new ProtocolRecord(
         rs.getShort("element_type_id"),

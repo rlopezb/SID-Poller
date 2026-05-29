@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -26,7 +27,7 @@ public class CollectorFactory {
 
   public Callable<List<MetricRecord>> create(CollectorRecord collector, WorkersService workersService) {
     return switch (collector.protocol().toUpperCase()) {
-      case "SSH"  -> createCollector(collector, workersService, this::createSshWorkers);
+      case "SSH" -> createCollector(collector, workersService, this::createSshWorkers);
       case "SNMP" -> createCollector(collector, workersService, this::createSnmpWorkers);
       default -> throw new IllegalArgumentException("Unknown protocol: " + collector.protocol());
     };
@@ -38,13 +39,17 @@ public class CollectorFactory {
       BiFunction<List<SourceRecord>, ProtocolRecord, List<Callable<List<MetricRecord>>>> workerBuilder) {
     return () -> {
       List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+      Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
       Map<Short, List<SourceRecord>> byElement = sources.stream()
           .collect(Collectors.groupingBy(SourceRecord::elementId));
 
       List<Callable<List<MetricRecord>>> workers = byElement.entrySet().stream()
           .flatMap(entry -> {
             short elementTypeId = entry.getValue().getFirst().elementTypeId();
-            ProtocolRecord protocol = protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), elementTypeId);
+            ProtocolRecord protocol = protocolCache.computeIfAbsent(
+                elementTypeId,
+                id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id)
+            );
             return workerBuilder.apply(entry.getValue(), protocol).stream();
           })
           .toList();
