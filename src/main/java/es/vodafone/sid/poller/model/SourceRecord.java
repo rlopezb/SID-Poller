@@ -6,6 +6,7 @@ public record SourceRecord(
     short id,
     String name,
     String description,
+    short type,
     short elementId,
     short elementTypeId,
     short siteId,

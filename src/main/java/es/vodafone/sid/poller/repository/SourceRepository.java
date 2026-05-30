@@ -17,6 +17,7 @@ public class SourceRepository {
       rs.getShort("id"),
       rs.getString("name"),
       rs.getString("description"),
+      rs.getShort("type"),
       rs.getShort("element_id"),
       rs.getShort("element_type_id"),
       rs.getShort("site_id"),
