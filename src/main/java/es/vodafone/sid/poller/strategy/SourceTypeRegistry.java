@@ -11,6 +11,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SourceTypeRegistry {
 
+    private static final short TYPE_DIRECT = 1;
+    private static final short TYPE_SUM_LINES = 2;
+    private static final short TYPE_SCALED = 3;
+    private static final short TYPE_SUM_SCALED = 4;
+    private static final short TYPE_COUNTER = 5;
+    private static final short TYPE_DIRECT_ALT = 6;
+    private static final short TYPE_MULTI_CAPTURE = 7;
+
     private final SourceRepository sourceRepository;
 
     private Map<Short, SourceType> registry;
@@ -19,13 +27,13 @@ public class SourceTypeRegistry {
     public void init() {
         SourceType direct = new DirectSourceType();
         registry = Map.of(
-            (short) 1, direct,
-            (short) 2, new SumLinesSourceType(),
-            (short) 3, new ScaledSourceType(),
-            (short) 4, new SumScaledSourceType(),
-            (short) 5, new CounterSourceType(sourceRepository),
-            (short) 6, direct,
-            (short) 7, new MultiCaptureSourceType()
+            TYPE_DIRECT, direct,
+            TYPE_SUM_LINES, new SumLinesSourceType(),
+            TYPE_SCALED, new ScaledSourceType(),
+            TYPE_SUM_SCALED, new SumScaledSourceType(),
+            TYPE_COUNTER, new CounterSourceType(sourceRepository),
+            TYPE_DIRECT_ALT, direct,
+            TYPE_MULTI_CAPTURE, new MultiCaptureSourceType()
         );
     }
 
