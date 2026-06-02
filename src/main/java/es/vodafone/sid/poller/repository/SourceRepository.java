@@ -42,4 +42,11 @@ public class SourceRepository {
   public List<SourceRecord> findAllByCollectorId(short collectorId) {
     return jdbcTemplate.query("select * from source where collector_id = ?", ROW_MAPPER, collectorId);
   }
+
+  public void updateCacheAndInstant(short id, double cache, OffsetDateTime instant) {
+    jdbcTemplate.update(
+        "update source set cache = ?, instant = ? where id = ?",
+        cache, instant, id
+    );
+  }
 }

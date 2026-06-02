@@ -5,6 +5,7 @@ import es.vodafone.sid.poller.model.ElementRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.model.ProtocolRecord;
 import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
@@ -14,16 +15,16 @@ import org.apache.sshd.client.session.ClientSession;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class SshWorker implements Callable<List<MetricRecord>> {
   private final List<SourceRecord> sources;
   private final ProtocolRecord protocol;
   private final SshClient sshClient;
+  private final SourceTypeRegistry sourceTypeRegistry;
 
   @Override
   public List<MetricRecord> call() {
@@ -49,9 +51,23 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       session.addPasswordIdentity(password);
       session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
-      return sources.stream()
-          .map(source -> executeCommand(session, source))
-          .toList();
+      // Agrupar por address para el tipo 7
+      Map<String, List<SourceRecord>> byAddress = sources.stream()
+          .collect(Collectors.groupingBy(SourceRecord::address));
+
+      OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
+      List<MetricRecord> metrics = new ArrayList<>();
+
+      for (Map.Entry<String, List<SourceRecord>> entry : byAddress.entrySet()) {
+        String command = entry.getKey();
+        List<SourceRecord> group = entry.getValue();
+        String rawValue = executeCommand(session, command, timeout);
+        if (rawValue != null) {
+          short type = group.getFirst().type();
+          metrics.addAll(sourceTypeRegistry.get(type).apply(rawValue, group, instant));
+        }
+      }
+      return metrics;
 
     } catch (IOException e) {
       log.error("SSH connection failed to {}", host, e);
@@ -59,55 +75,19 @@ public class SshWorker implements Callable<List<MetricRecord>> {
     }
   }
 
-  private MetricRecord executeCommand(ClientSession session, SourceRecord source) {
-    log.debug("Executing ssh command: {}", source.address());
-    try (ChannelExec channel = session.createExecChannel(source.address())) {
+  private String executeCommand(ClientSession session, String command, long timeout) {
+    log.debug("Executing ssh command: {}", command);
+    try (ChannelExec channel = session.createExecChannel(command)) {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       channel.setOut(output);
-      channel.open().verify(protocol.config().get("timeout").asInt(), TimeUnit.MILLISECONDS);
-      channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), protocol.config().get("timeout").asInt());
-
+      channel.open().verify(timeout, TimeUnit.MILLISECONDS);
+      channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), timeout);
       String result = output.toString(StandardCharsets.UTF_8).trim();
-      log.debug("SSH command result {}", result);
-      BigInteger value = parseValue(result, source);
-
-      return new MetricRecord(
-          OffsetDateTime.now(ZoneOffset.UTC),
-          source.id(),
-          source.elementId(),
-          source.elementTypeId(),
-          source.siteId(),
-          source.cdcId(),
-          source.zoneId(),
-          source.netId(),
-          source.archId(),
-          source.groupId(),
-          source.serviceId(),
-          source.serviceTypeId(),
-          value
-      );
+      log.debug("SSH command result: {}", result);
+      return result;
     } catch (IOException e) {
-      log.error("Command '{}' failed on {}", source.address(), source.name(), e);
+      log.error("Command '{}' failed on {}", command, element.name(), e);
       return null;
     }
-  }
-
-  private BigInteger parseValue(String result, SourceRecord source) {
-    try {
-      if (source.capture() != null && !source.capture().isBlank()) {
-        Pattern pattern = Pattern.compile(source.capture());
-        Matcher matcher = pattern.matcher(result);
-        if (matcher.find()) {
-          return new BigInteger(matcher.group(1));
-        }
-        log.warn("Capture pattern '{}' did not match output for source {}",
-            source.capture(), source.name());
-      } else {
-        return new BigInteger(result);
-      }
-    } catch (NumberFormatException e) {
-      log.warn("Could not parse value from output '{}' for source {}", result, source.name());
-    }
-    return BigInteger.ZERO;
   }
 }

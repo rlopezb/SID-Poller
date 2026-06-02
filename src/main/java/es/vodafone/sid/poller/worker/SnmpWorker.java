@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.ElementRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.model.ProtocolRecord;
 import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.*;
@@ -33,6 +34,7 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
   private final ProtocolRecord protocol;
   private final Snmp snmp;
   private final Consumer<ProtocolRecord> snmpUserRegistry;
+  private final SourceTypeRegistry sourceTypeRegistry;
 
   @Override
   public List<MetricRecord> call() {
@@ -44,7 +46,7 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
 
     Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
     PDU pdu = buildPdu(sources);
-
+    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     try {
       log.debug("Sending PDU with size: {}", pdu.size());
       ResponseEvent<?> event = snmp.send(pdu, target);
@@ -52,7 +54,15 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
         log.warn("No SNMP response from {}", element.name());
         return List.of();
       }
-      return parseResponse(event.getResponse(), sources);
+      PDU response = event.getResponse();
+      List<MetricRecord> metrics = new ArrayList<>();
+      for (int i = 0; i < response.size(); i++) {
+        String rawValue = response.get(i).getVariable().toString();
+        SourceRecord source = sources.get(i);
+        metrics.addAll(sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), instant));
+      }
+      return metrics;
+
     } catch (IOException e) {
       log.error("SNMP request failed to {}", element.name(), e);
       return List.of();

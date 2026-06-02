@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.*;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class CollectorFactory {
   private final SshClient sshClient;
   private final Snmp snmp;
   private final Consumer<ProtocolRecord> snmpUserRegistry;
+  private final SourceTypeRegistry sourceTypeRegistry;
 
   public Callable<List<MetricRecord>> create(CollectorRecord collector, WorkersService workersService) {
     return switch (collector.protocol().toUpperCase()) {
@@ -44,7 +46,7 @@ public class CollectorFactory {
       short elementTypeId = element.elementTypeId();
       ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
-      workers.add(new SshWorker(element, group, protocol, sshClient));
+      workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
     }
     return workersService.get(workers);
   }
@@ -61,7 +63,7 @@ public class CollectorFactory {
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       int maxOid = protocol.config().get("maxOid").asInt();
       for (List<SourceRecord> chunk : partition(group, maxOid)) {
-        workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry));
+        workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
       }
     }
     return workersService.get(workers);
