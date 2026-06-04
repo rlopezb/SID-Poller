@@ -2,10 +2,15 @@ package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.CollectorRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
+import es.vodafone.sid.poller.model.MetricRecords;
+import es.vodafone.sid.poller.model.SourceRecord;
 import es.vodafone.sid.poller.repository.MetricRepository;
+import es.vodafone.sid.poller.repository.SourceRepository;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -16,8 +21,14 @@ public class CollectorService {
   private final CollectorRecord collectorRecord;
   private final Callable<List<MetricRecord>> collector;
   private final MetricRepository metricRepository;
+  private final SourceRepository sourceRepository;
 
-  public CollectorService(Callable<List<MetricRecord>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
+  public CollectorService(
+      Callable<List<MetricRecord>> collector,
+      CollectorRecord collectorRecord,
+      MetricRepository metricRepository,
+      SourceRepository sourceRepository
+  ) {
     this.collectorRecord = collectorRecord;
     this.collector = collector;
     this.executor = Executors.newSingleThreadExecutor(r -> {
@@ -26,6 +37,7 @@ public class CollectorService {
       return t;
     });
     this.metricRepository = metricRepository;
+    this.sourceRepository = sourceRepository;
   }
 
   public void collect() {
@@ -45,6 +57,18 @@ public class CollectorService {
     } catch (ExecutionException | TimeoutException e) {
       future.cancel(true);
       log.error("{} collector failed ({})", collectorRecord.name(), e.getClass().getSimpleName());
+      insertNullMetrics();
+    }
+  }
+
+  private void insertNullMetrics() {
+    try {
+      List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collectorRecord.id());
+      List<MetricRecord> metrics = MetricRecords.nullValues(sources, OffsetDateTime.now(ZoneOffset.UTC));
+      log.debug("{} collector fallback metrics with size: {}", collectorRecord.name(), metrics.size());
+      metricRepository.insert(metrics);
+    } catch (RuntimeException e) {
+      log.error("{} collector fallback failed", collectorRecord.name(), e);
     }
   }
 

@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.CollectorRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
+import es.vodafone.sid.poller.repository.SourceRepository;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ public class SchedulerService implements SchedulingConfigurer {
   private final CollectorFactory collectorFactory;
   private final MetricRepository metricRepository;
   private final CollectorRepository collectorRepository;
+  private final SourceRepository sourceRepository;
 
   private List<CollectorService> collectorServices = List.of();
   private final List<WorkersService> workersServices = new ArrayList<>();
@@ -31,7 +33,7 @@ public class SchedulerService implements SchedulingConfigurer {
     WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
     workersServices.add(workersService);
     Callable<List<MetricRecord>> collector = collectorFactory.create(collectorRecord, workersService);
-    return new CollectorService(collector, collectorRecord, metricRepository);
+    return new CollectorService(collector, collectorRecord, metricRepository, sourceRepository);
   }
 
   @Override

@@ -21,7 +21,12 @@ public class MultiCaptureSourceType extends BaseSourceType {
             Pattern pattern = Pattern.compile(source.capture());
             Matcher matcher = pattern.matcher(rawValue);
             if (matcher.find()) {
-                metrics.add(metric(source, instant, new BigInteger(matcher.group(1))));
+                try {
+                    metrics.add(metric(source, instant, new BigInteger(matcher.group(1))));
+                } catch (NumberFormatException e) {
+                    log.warn("Could not parse capture value '{}' for source {}",
+                        matcher.group(1), source.name());
+                }
             } else {
                 log.warn("Capture pattern '{}' did not match for source {}", source.capture(), source.name());
             }

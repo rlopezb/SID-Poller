@@ -3,6 +3,7 @@ package es.vodafone.sid.poller.worker;
 
 import es.vodafone.sid.poller.model.ElementRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
+import es.vodafone.sid.poller.model.MetricRecords;
 import es.vodafone.sid.poller.model.ProtocolRecord;
 import es.vodafone.sid.poller.model.SourceRecord;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
@@ -37,41 +38,49 @@ public class SshWorker implements Callable<List<MetricRecord>> {
 
   @Override
   public List<MetricRecord> call() {
+    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     String host = element.name();
-    String username = protocol.config().get("username").asString();
-    String password = protocol.config().get("password").asString();
-    int port = protocol.config().get("port").asInt(22);
-    long timeout = protocol.config().get("connectTimeout").asLong(10000);
 
-    try (ClientSession session = sshClient
-        .connect(username, host, port)
-        .verify(timeout, TimeUnit.MILLISECONDS)
-        .getSession()) {
+    try {
+      String username = protocol.config().get("username").asString();
+      String password = protocol.config().get("password").asString();
+      int port = protocol.config().get("port").asInt(22);
+      long timeout = protocol.config().get("connectTimeout").asLong(10000);
 
-      session.addPasswordIdentity(password);
-      session.auth().verify(timeout, TimeUnit.MILLISECONDS);
+      try (ClientSession session = sshClient
+          .connect(username, host, port)
+          .verify(timeout, TimeUnit.MILLISECONDS)
+          .getSession()) {
 
-      // Agrupar por address para el tipo 7
-      Map<String, List<SourceRecord>> byAddress = sources.stream()
-          .collect(Collectors.groupingBy(SourceRecord::address));
+        session.addPasswordIdentity(password);
+        session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
-      OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
-      List<MetricRecord> metrics = new ArrayList<>();
+        // Agrupar por address para el tipo 7
+        Map<String, List<SourceRecord>> byAddress = sources.stream()
+            .collect(Collectors.groupingBy(SourceRecord::address));
 
-      for (Map.Entry<String, List<SourceRecord>> entry : byAddress.entrySet()) {
-        String command = entry.getKey();
-        List<SourceRecord> group = entry.getValue();
-        String rawValue = executeCommand(session, command, timeout);
-        if (rawValue != null) {
-          short type = group.getFirst().type();
-          metrics.addAll(sourceTypeRegistry.get(type).apply(rawValue, group, instant));
+        List<MetricRecord> metrics = new ArrayList<>();
+
+        for (Map.Entry<String, List<SourceRecord>> entry : byAddress.entrySet()) {
+          String command = entry.getKey();
+          List<SourceRecord> group = entry.getValue();
+          try {
+            String rawValue = executeCommand(session, command, timeout);
+            if (rawValue != null) {
+              short type = group.getFirst().type();
+              metrics.addAll(sourceTypeRegistry.get(type).apply(rawValue, group, instant));
+            }
+          } catch (RuntimeException e) {
+            log.warn("Could not build SSH metrics for command '{}' on {}", command, host, e);
+          }
         }
-      }
-      return metrics;
 
-    } catch (IOException e) {
+        return MetricRecords.complete(sources, metrics, instant);
+      }
+
+    } catch (IOException | RuntimeException e) {
       log.error("SSH connection failed to {}", host, e);
-      return List.of();
+      return MetricRecords.nullValues(sources, instant);
     }
   }
 
@@ -85,7 +94,7 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       String result = output.toString(StandardCharsets.UTF_8).trim();
       log.debug("SSH command result: {}", result);
       return result;
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
       log.error("Command '{}' failed on {}", command, element.name(), e);
       return null;
     }

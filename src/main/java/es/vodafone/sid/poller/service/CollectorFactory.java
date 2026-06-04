@@ -8,15 +8,19 @@ import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
 import org.snmp4j.Snmp;
 import org.springframework.stereotype.Component;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CollectorFactory {
@@ -38,35 +42,62 @@ public class CollectorFactory {
 
   private List<MetricRecord> collectSsh(CollectorRecord collector, WorkersService workersService) {
     List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
     List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
     for (List<SourceRecord> group : groupByElement(sources)) {
-      ElementRecord element = elementRepository.findById(group.getFirst().elementId());
-      short elementTypeId = element.elementTypeId();
-      ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
-          id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
-      workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
+      try {
+        ElementRecord element = elementRepository.findById(group.getFirst().elementId());
+        short elementTypeId = element.elementTypeId();
+        ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
+            id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
+        workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
+      } catch (RuntimeException e) {
+        log.error("Could not create SSH worker for collector {} and element {}",
+            collector.name(), group.getFirst().elementId(), e);
+      }
     }
-    return workersService.get(workers);
+    return completeCollectorMetrics(collector, sources, workersService, workers, instant);
   }
 
   private List<MetricRecord> collectSnmp(CollectorRecord collector, WorkersService workersService) {
     List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
     List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
     for (List<SourceRecord> group : groupByElement(sources)) {
-      ElementRecord element = elementRepository.findById(group.getFirst().elementId());
-      short elementTypeId = element.elementTypeId();
-      ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
-          id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
-      int maxOid = protocol.config().get("maxOid").asInt();
-      for (List<SourceRecord> chunk : partition(group, maxOid)) {
-        workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
+      try {
+        ElementRecord element = elementRepository.findById(group.getFirst().elementId());
+        short elementTypeId = element.elementTypeId();
+        ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
+            id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
+        int maxOid = Math.max(1, protocol.config().get("maxOid").asInt());
+        for (List<SourceRecord> chunk : partition(group, maxOid)) {
+          workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
+        }
+      } catch (RuntimeException e) {
+        log.error("Could not create SNMP worker for collector {} and element {}",
+            collector.name(), group.getFirst().elementId(), e);
       }
     }
-    return workersService.get(workers);
+    return completeCollectorMetrics(collector, sources, workersService, workers, instant);
+  }
+
+  private List<MetricRecord> completeCollectorMetrics(
+      CollectorRecord collector,
+      List<SourceRecord> sources,
+      WorkersService workersService,
+      List<Callable<List<MetricRecord>>> workers,
+      OffsetDateTime instant
+  ) {
+    try {
+      return MetricRecords.complete(sources, workersService.get(workers), instant);
+    } catch (RuntimeException e) {
+      log.error("Collector {} failed", collector.name(), e);
+      return MetricRecords.nullValues(sources, instant);
+    }
   }
 
   private static Collection<List<SourceRecord>> groupByElement(List<SourceRecord> sources) {
