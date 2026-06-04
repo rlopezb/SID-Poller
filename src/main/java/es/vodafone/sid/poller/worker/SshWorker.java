@@ -1,4 +1,3 @@
-// worker/SshWorker.java
 package es.vodafone.sid.poller.worker;
 
 import es.vodafone.sid.poller.model.ElementRecord;
@@ -44,40 +43,59 @@ public class SshWorker implements Callable<List<MetricRecord>> {
     String host = element.name();
 
     try {
-      String username = protocol.config().get("username").asString();
-      String password = protocol.config().get("password").asString();
-      int port = protocol.config().get("port").asInt(22);
       long timeout = protocol.config().get("connectTimeout").asLong(10000);
 
-      try (ClientSession session = sshClient
-          .connect(username, host, port)
-          .verify(timeout, TimeUnit.MILLISECONDS)
-          .getSession()) {
-
-        session.addPasswordIdentity(password);
-        session.auth().verify(timeout, TimeUnit.MILLISECONDS);
-
-        List<MetricRecord> metrics = new ArrayList<>();
-
-        for (List<SourceRecord> group : commandGroups()) {
-          String command = group.getFirst().address();
-          try {
-            String rawValue = executeCommand(session, command, timeout);
-            if (rawValue != null) {
-              short type = group.getFirst().type();
-              metrics.addAll(sourceTypeRegistry.get(type).apply(rawValue, group, instant));
-            }
-          } catch (RuntimeException e) {
-            log.warn("Could not build SSH metrics for command '{}' on {}", command, host, e);
-          }
-        }
-
-        return MetricRecords.complete(sources, metrics, instant);
+      try (ClientSession session = connect(timeout)) {
+        authenticate(session, timeout);
+        return MetricRecords.complete(sources, collectMetrics(session, timeout, instant), instant);
       }
 
     } catch (IOException | RuntimeException e) {
       log.error("SSH connection failed to {}", host, e);
       return MetricRecords.nullValues(sources, instant);
+    }
+  }
+
+  private ClientSession connect(long timeout) throws IOException {
+    return sshClient.connect(
+            protocol.config().get("username").asString(),
+            element.name(),
+            protocol.config().get("port").asInt(22)
+        )
+        .verify(timeout, TimeUnit.MILLISECONDS)
+        .getSession();
+  }
+
+  private void authenticate(ClientSession session, long timeout) throws IOException {
+    session.addPasswordIdentity(protocol.config().get("password").asString());
+    session.auth().verify(timeout, TimeUnit.MILLISECONDS);
+  }
+
+  private List<MetricRecord> collectMetrics(ClientSession session, long timeout, OffsetDateTime instant) {
+    List<MetricRecord> metrics = new ArrayList<>();
+    for (List<SourceRecord> group : commandGroups()) {
+      metrics.addAll(collectMetrics(session, group, timeout, instant));
+    }
+    return metrics;
+  }
+
+  private List<MetricRecord> collectMetrics(
+      ClientSession session,
+      List<SourceRecord> group,
+      long timeout,
+      OffsetDateTime instant
+  ) {
+    String command = group.getFirst().address();
+    try {
+      String rawValue = executeCommand(session, command, timeout);
+      if (rawValue == null) {
+        return List.of();
+      }
+      short type = group.getFirst().type();
+      return sourceTypeRegistry.get(type).apply(rawValue, group, instant);
+    } catch (RuntimeException e) {
+      log.warn("Could not build SSH metrics for command '{}' on {}", command, element.name(), e);
+      return List.of();
     }
   }
 
