@@ -21,15 +21,17 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
 public class SshWorker implements Callable<List<MetricRecord>> {
+  private static final short TYPE_MULTI_CAPTURE = 7;
+
   private final ElementRecord element;
   private final List<SourceRecord> sources;
   private final ProtocolRecord protocol;
@@ -55,15 +57,10 @@ public class SshWorker implements Callable<List<MetricRecord>> {
         session.addPasswordIdentity(password);
         session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
-        // Agrupar por address para el tipo 7
-        Map<String, List<SourceRecord>> byAddress = sources.stream()
-            .collect(Collectors.groupingBy(SourceRecord::address));
-
         List<MetricRecord> metrics = new ArrayList<>();
 
-        for (Map.Entry<String, List<SourceRecord>> entry : byAddress.entrySet()) {
-          String command = entry.getKey();
-          List<SourceRecord> group = entry.getValue();
+        for (List<SourceRecord> group : commandGroups()) {
+          String command = group.getFirst().address();
           try {
             String rawValue = executeCommand(session, command, timeout);
             if (rawValue != null) {
@@ -82,6 +79,22 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       log.error("SSH connection failed to {}", host, e);
       return MetricRecords.nullValues(sources, instant);
     }
+  }
+
+  private List<List<SourceRecord>> commandGroups() {
+    List<List<SourceRecord>> groups = new ArrayList<>();
+    Map<String, List<SourceRecord>> multiCaptureByAddress = new LinkedHashMap<>();
+
+    for (SourceRecord source : sources) {
+      if (source.type() == TYPE_MULTI_CAPTURE) {
+        multiCaptureByAddress.computeIfAbsent(source.address(), address -> new ArrayList<>()).add(source);
+      } else {
+        groups.add(List.of(source));
+      }
+    }
+
+    groups.addAll(multiCaptureByAddress.values());
+    return groups;
   }
 
   private String executeCommand(ClientSession session, String command, long timeout) {
