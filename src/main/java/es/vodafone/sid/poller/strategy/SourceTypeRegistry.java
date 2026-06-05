@@ -17,7 +17,7 @@ public class SourceTypeRegistry {
     private static final short TYPE_SUM_SCALED = 4;
     private static final short TYPE_COUNTER = 5;
     private static final short TYPE_DIRECT_ALT = 6;
-    private static final short TYPE_MULTI_CAPTURE = 7;
+    public static final short TYPE_MULTI_CAPTURE = 7;
 
     private final SourceRepository sourceRepository;
 

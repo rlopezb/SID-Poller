@@ -21,7 +21,6 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -52,22 +51,33 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       session.addPasswordIdentity(password);
       session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
-      Map<String, List<SourceRecord>> byAddress = sources.stream()
-          .collect(Collectors.groupingBy(SourceRecord::address));
-
       List<MetricRecord> metrics = new ArrayList<>();
+      List<SourceRecord> singleSources = sources.stream()
+          .filter(s -> s.type() != SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+          .toList();
 
-      for (Map.Entry<String, List<SourceRecord>> entry : byAddress.entrySet()) {
-        String command = entry.getKey();
-        List<SourceRecord> group = entry.getValue();
-        String rawValue = executeCommand(session, command, timeout);
+      for (SourceRecord source : singleSources) {
+        String rawValue = executeCommand(session, source.address(), timeout);
         if (rawValue != null) {
-          short type = group.getFirst().type();
-          metrics.addAll(sourceTypeRegistry.get(type).apply(rawValue, group, instant));
+          metrics.addAll(sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), instant));
         } else {
-          group.forEach(source -> metrics.add(BaseSourceType.nullMetric(source, instant)));
+          metrics.add(BaseSourceType.nullMetric(source, instant));
         }
       }
+
+      sources.stream()
+          .filter(s -> s.type() == SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+          .collect(Collectors.groupingBy(SourceRecord::address))
+          .forEach((command, group) -> {
+            String rawValue = executeCommand(session, command, timeout);
+            if (rawValue != null) {
+              metrics.addAll(sourceTypeRegistry.get(SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+                  .apply(rawValue, group, instant));
+            } else {
+              group.forEach(source -> metrics.add(BaseSourceType.nullMetric(source, instant)));
+            }
+          });
+
       return metrics;
 
     } catch (IOException e) {
