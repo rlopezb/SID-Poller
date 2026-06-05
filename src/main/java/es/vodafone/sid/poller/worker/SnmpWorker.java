@@ -18,7 +18,6 @@ import org.snmp4j.smi.VariableBinding;
 import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -86,29 +85,7 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
     sources.forEach(source -> pdu.add(new VariableBinding(new OID(source.address()))));
     return pdu;
   }
-  private List<MetricRecord> parseResponse(PDU response, List<SourceRecord> sources) {
-    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    List<MetricRecord> metrics = new ArrayList<>();
-    for (int i = 0; i < response.size(); i++) {
-      VariableBinding vb = response.get(i);
-      SourceRecord source = sources.get(i);
-      try {
-        BigInteger value = new BigInteger(vb.getVariable().toString());
-        log.debug("Parsed SNMP value '{}' for OID {}: {}", vb.getVariable(), source.address(), value);
-        metrics.add(new MetricRecord(
-            now,
-            source.id(), source.elementId(), source.elementTypeId(),
-            source.siteId(), source.cdcId(), source.zoneId(), source.netId(),
-            source.archId(), source.groupId(), source.serviceId(), source.serviceTypeId(),
-            value
-        ));
-      } catch (NumberFormatException e) {
-        log.warn("Could not parse SNMP value '{}' for OID {}",
-            vb.getVariable(), source.address());
-      }
-    }
-    return metrics;
-  }
+
 
   private int resolveSecurityLevel(String level) {
     return switch (level.toUpperCase()) {

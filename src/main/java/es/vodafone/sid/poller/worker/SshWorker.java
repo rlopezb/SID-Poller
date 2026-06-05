@@ -1,4 +1,3 @@
-// worker/SshWorker.java
 package es.vodafone.sid.poller.worker;
 
 import es.vodafone.sid.poller.model.ElementRecord;
@@ -51,7 +50,6 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       session.addPasswordIdentity(password);
       session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
-      // Agrupar por address para el tipo 7
       Map<String, List<SourceRecord>> byAddress = sources.stream()
           .collect(Collectors.groupingBy(SourceRecord::address));
 
