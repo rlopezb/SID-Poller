@@ -5,6 +5,7 @@ import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.model.ProtocolRecord;
 import es.vodafone.sid.poller.model.SourceRecord;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.BaseSourceType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.*;
@@ -24,8 +25,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
-
-import es.vodafone.sid.poller.strategy.BaseSourceType;
 
 @Slf4j
 @RequiredArgsConstructor
