@@ -26,7 +26,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-
 @Slf4j
 @RequiredArgsConstructor
 public class SshWorker implements Callable<List<MetricRecord>> {

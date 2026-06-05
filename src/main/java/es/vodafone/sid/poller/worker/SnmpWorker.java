@@ -91,7 +91,6 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
     return pdu;
   }
 
-
   private int resolveSecurityLevel(String level) {
     return switch (level.toUpperCase()) {
       case "AUTHNOPRIV" -> SecurityLevel.AUTH_NOPRIV;
