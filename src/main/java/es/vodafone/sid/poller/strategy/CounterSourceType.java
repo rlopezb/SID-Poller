@@ -26,7 +26,7 @@ public class CounterSourceType extends BaseSourceType {
         if (source.instant() == null) {
             log.debug("First reading for counter source {}, storing initial value", source.name());
             sourceRepository.updateCacheAndInstant(source.id(), current.doubleValue(), instant);
-            return List.of();
+            return List.of(BaseSourceType.nullMetric(source, instant));
         }
 
         long seconds = ChronoUnit.SECONDS.between(source.instant(), instant);

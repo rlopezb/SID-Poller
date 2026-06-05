@@ -21,4 +21,8 @@ public abstract class BaseSourceType implements SourceType {
     protected static BigInteger parse(String rawValue) {
         return new BigInteger(rawValue.trim());
     }
+
+    public static MetricRecord nullMetric(SourceRecord source, OffsetDateTime instant) {
+        return metric(source, instant, null);
+    }
 }

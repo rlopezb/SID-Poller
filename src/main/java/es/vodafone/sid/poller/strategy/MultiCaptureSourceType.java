@@ -24,6 +24,7 @@ public class MultiCaptureSourceType extends BaseSourceType {
                 metrics.add(metric(source, instant, new BigInteger(matcher.group(1))));
             } else {
                 log.warn("Capture pattern '{}' did not match for source {}", source.capture(), source.name());
+                metrics.add(BaseSourceType.nullMetric(source, instant));
             }
         }
         return metrics;

@@ -25,6 +25,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import es.vodafone.sid.poller.strategy.BaseSourceType;
+
 @Slf4j
 @RequiredArgsConstructor
 public class SshWorker implements Callable<List<MetricRecord>> {
@@ -41,6 +43,7 @@ public class SshWorker implements Callable<List<MetricRecord>> {
     String password = protocol.config().get("password").asString();
     int port = protocol.config().get("port").asInt(22);
     long timeout = protocol.config().get("connectTimeout").asLong(10000);
+    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
 
     try (ClientSession session = sshClient
         .connect(username, host, port)
@@ -53,7 +56,6 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       Map<String, List<SourceRecord>> byAddress = sources.stream()
           .collect(Collectors.groupingBy(SourceRecord::address));
 
-      OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
       List<MetricRecord> metrics = new ArrayList<>();
 
       for (Map.Entry<String, List<SourceRecord>> entry : byAddress.entrySet()) {
@@ -63,13 +65,17 @@ public class SshWorker implements Callable<List<MetricRecord>> {
         if (rawValue != null) {
           short type = group.getFirst().type();
           metrics.addAll(sourceTypeRegistry.get(type).apply(rawValue, group, instant));
+        } else {
+          group.forEach(source -> metrics.add(BaseSourceType.nullMetric(source, instant)));
         }
       }
       return metrics;
 
     } catch (IOException e) {
       log.error("SSH connection failed to {}", host, e);
-      return List.of();
+      return sources.stream()
+          .map(source -> BaseSourceType.nullMetric(source, instant))
+          .toList();
     }
   }
 

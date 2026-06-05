@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 
+import es.vodafone.sid.poller.strategy.BaseSourceType;
+
 @Slf4j
 @RequiredArgsConstructor
 public class SnmpWorker implements Callable<List<MetricRecord>> {
@@ -51,7 +53,9 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
         log.warn("No SNMP response from {}", element.name());
-        return List.of();
+        return sources.stream()
+            .map(source -> BaseSourceType.nullMetric(source, instant))
+            .toList();
       }
       PDU response = event.getResponse();
       List<MetricRecord> metrics = new ArrayList<>();
@@ -64,7 +68,9 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
 
     } catch (IOException e) {
       log.error("SNMP request failed to {}", element.name(), e);
-      return List.of();
+      return sources.stream()
+          .map(source -> BaseSourceType.nullMetric(source, instant))
+          .toList();
     }
   }
   private Target<UdpAddress> buildTarget(String host, int port,
