@@ -44,7 +44,7 @@ public class CollectorService {
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
       future.cancel(true);
-      log.error("{} collector failed ({})", collectorRecord.name(), e.getClass().getSimpleName());
+      log.error("{} collector failed", collectorRecord.name(), e);
     }
   }
 

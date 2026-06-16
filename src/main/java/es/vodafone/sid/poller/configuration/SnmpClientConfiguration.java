@@ -26,6 +26,7 @@ public class SnmpClientConfiguration {
     TransportMapping<UdpAddress> transport = new DefaultUdpTransportMapping();
     Snmp snmp = new Snmp(transport);
     USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
+    usm.setEngineDiscoveryEnabled(true);
     SecurityModels.getInstance().addSecurityModel(usm);
     transport.listen();
     return snmp;

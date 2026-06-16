@@ -19,7 +19,7 @@ public class DiscovererRepository {
       rs.getString("protocol"),
       rs.getString("cron"),
       rs.getInt("discoverer_timeout"),
-      rs.getInt("worker_timeout")
+      rs.getInt("walker_timeout")
   );
 
   public List<DiscovererRecord> findAll() {
