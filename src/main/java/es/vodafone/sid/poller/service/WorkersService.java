@@ -39,7 +39,6 @@ public class WorkersService {
   }
 
   public List<MetricRecord> get(List<Callable<List<MetricRecord>>> workers) {
-
     List<Future<List<MetricRecord>>> futures = null;
     try {
       futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);

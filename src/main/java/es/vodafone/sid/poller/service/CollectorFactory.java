@@ -37,7 +37,7 @@ public class CollectorFactory {
   }
 
   private List<MetricRecord> collectSsh(CollectorRecord collector, WorkersService workersService) {
-    List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+    List<SourceRecord> sources = sourceRepository.findByCollectorId(collector.id());
     Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
     List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
@@ -52,7 +52,7 @@ public class CollectorFactory {
   }
 
   private List<MetricRecord> collectSnmp(CollectorRecord collector, WorkersService workersService) {
-    List<SourceRecord> sources = sourceRepository.findAllByCollectorId(collector.id());
+    List<SourceRecord> sources = sourceRepository.findByCollectorId(collector.id());
     Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
     List<Callable<List<MetricRecord>>> workers = new ArrayList<>();

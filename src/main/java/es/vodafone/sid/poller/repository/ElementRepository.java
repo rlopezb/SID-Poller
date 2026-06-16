@@ -16,7 +16,13 @@ public class ElementRepository {
   private static final RowMapper<ElementRecord> ROW_MAPPER = (rs, _) -> new ElementRecord(
       rs.getShort("id"),
       rs.getString("name"),
-      rs.getShort("element_type_id")
+      rs.getShort("element_type_id"),
+      rs.getShort("site_id"),
+      rs.getShort("cdc_id"),
+      rs.getShort("zone_id"),
+      rs.getShort("arch_id"),
+      rs.getShort("net_id")
+
   );
 
   public ElementRecord findById(short id) {

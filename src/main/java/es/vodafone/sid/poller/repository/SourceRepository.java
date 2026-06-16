@@ -39,14 +39,37 @@ public class SourceRepository {
     return jdbcTemplate.query("select * from source", ROW_MAPPER);
   }
 
-  public List<SourceRecord> findAllByCollectorId(short collectorId) {
+  public List<SourceRecord> findByCollectorId(short collectorId) {
     return jdbcTemplate.query("select * from source where collector_id = ?", ROW_MAPPER, collectorId);
   }
 
-  public void updateCacheAndInstant(short id, double cache, OffsetDateTime instant) {
-    jdbcTemplate.update(
-        "update source set cache = ?, instant = ? where id = ?",
-        cache, instant, id
+  public List<SourceRecord> findByElementIdAndCollectorId(short elementId, short collectorId) {
+    return jdbcTemplate.query("select * from source where collector_id = ? and element_id = ? ", ROW_MAPPER, collectorId, elementId);
+  }
+
+  public void insert(SourceRecord sourceRecord) {
+    jdbcTemplate.update("""
+        insert into source (
+            name, description, type, element_id, element_type_id,
+            site_id, cdc_id, zone_id, net_id, arch_id,
+            group_id, service_id, service_type_id,
+            collector_id, discoverer_id, address, capture
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        sourceRecord.name(), sourceRecord.description(), sourceRecord.type(),
+        sourceRecord.elementId(), sourceRecord.elementTypeId(),
+        sourceRecord.siteId(), sourceRecord.cdcId(), sourceRecord.zoneId(), sourceRecord.netId(), sourceRecord.archId(),
+        sourceRecord.groupId(), sourceRecord.serviceId(), sourceRecord.serviceTypeId(),
+        sourceRecord.collectorId(), sourceRecord.discovererId(),
+        sourceRecord.address(), sourceRecord.capture()
     );
+  }
+
+  public void deleteById(short id) {
+    jdbcTemplate.update("delete from source where id = ?", id);
+  }
+
+  public void updateCacheAndInstant(short id, double cache, OffsetDateTime instant) {
+    jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?", cache, instant, id);
   }
 }

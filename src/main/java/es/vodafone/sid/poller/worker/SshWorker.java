@@ -21,6 +21,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -52,10 +53,10 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
       List<MetricRecord> metrics = new ArrayList<>();
+
       List<SourceRecord> singleSources = sources.stream()
           .filter(s -> s.type() != SourceTypeRegistry.TYPE_MULTI_CAPTURE)
           .toList();
-
       for (SourceRecord source : singleSources) {
         String rawValue = executeCommand(session, source.address(), timeout);
         if (rawValue != null) {
@@ -65,18 +66,18 @@ public class SshWorker implements Callable<List<MetricRecord>> {
         }
       }
 
-      sources.stream()
+      Map<String, List<SourceRecord>> multiSources = sources.stream()
           .filter(s -> s.type() == SourceTypeRegistry.TYPE_MULTI_CAPTURE)
-          .collect(Collectors.groupingBy(SourceRecord::address))
-          .forEach((command, group) -> {
-            String rawValue = executeCommand(session, command, timeout);
-            if (rawValue != null) {
-              metrics.addAll(sourceTypeRegistry.get(SourceTypeRegistry.TYPE_MULTI_CAPTURE)
-                  .apply(rawValue, group, instant));
-            } else {
-              group.forEach(source -> metrics.add(BaseSourceType.nullMetric(source, instant)));
-            }
-          });
+          .collect(Collectors.groupingBy(SourceRecord::address));
+      for (Map.Entry<String, List<SourceRecord>> entry : multiSources.entrySet()) {
+        String rawValue = executeCommand(session, entry.getKey(), timeout);
+        if (rawValue != null) {
+          metrics.addAll(sourceTypeRegistry.get(SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+              .apply(rawValue, entry.getValue(), instant));
+        } else {
+          entry.getValue().forEach(source -> metrics.add(BaseSourceType.nullMetric(source, instant)));
+        }
+      }
 
       return metrics;
 
