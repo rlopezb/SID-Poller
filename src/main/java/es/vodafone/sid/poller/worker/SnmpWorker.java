@@ -24,7 +24,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,22 +33,21 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
   private final List<SourceRecord> sources;
   private final ProtocolRecord protocol;
   private final Snmp snmp;
-  private final Consumer<ProtocolRecord> snmpUserRegistry;
+  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
 
   @Override
   public List<MetricRecord> call() {
-    snmpUserRegistry.accept(protocol);
+
     JsonNode config = protocol.config();
     int port = config.get("port").asInt(161);
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
-
     Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
+    snmpUserRegistry.accept(protocol, target.getAddress());
     PDU pdu = buildPdu(sources);
     OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     try {
-      log.debug("Sending PDU with size: {}", pdu.size());
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
         log.warn("No SNMP response from {}", element.name());

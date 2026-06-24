@@ -21,7 +21,7 @@ import tools.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,10 +33,10 @@ public class SnmpWalker implements Callable<List<SourceRecord>> {
   private final List<PatternRecord> patterns;
   private final ProtocolRecord protocol;
   private final Snmp snmp;
-  private final Consumer<ProtocolRecord> snmpUserRegistry;
+  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
 
   public SnmpWalker(short discovererId, ElementRecord element, List<PatternRecord> patterns,
-                    ProtocolRecord protocol, Snmp snmp, Consumer<ProtocolRecord> snmpUserRegistry) {
+                    ProtocolRecord protocol, Snmp snmp, BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry) {
     this.discovererId = discovererId;
     this.element = element;
     this.patterns = patterns;
@@ -47,13 +47,13 @@ public class SnmpWalker implements Callable<List<SourceRecord>> {
 
   @Override
   public List<SourceRecord> call() {
-    snmpUserRegistry.accept(protocol);
     JsonNode config = protocol.config();
     int port = config.get("port").asInt(161);
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
 
     Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
+    snmpUserRegistry.accept(protocol, target.getAddress());
     TreeUtils treeUtils = new TreeUtils(snmp, new DefaultPDUFactory());
 
     List<SourceRecord> discovered = new ArrayList<>();

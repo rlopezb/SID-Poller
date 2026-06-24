@@ -1,8 +1,11 @@
 package es.vodafone.sid.poller.configuration;
 
 import es.vodafone.sid.poller.model.ProtocolRecord;
-import org.snmp4j.Snmp;
-import org.snmp4j.TransportMapping;
+import lombok.extern.slf4j.Slf4j;
+import org.snmp4j.*;
+
+import org.snmp4j.mp.MPv1;
+import org.snmp4j.mp.MPv2c;
 import org.snmp4j.mp.MPv3;
 import org.snmp4j.security.*;
 import org.snmp4j.smi.OID;
@@ -14,38 +17,65 @@ import org.springframework.context.annotation.Configuration;
 import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
+
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Configuration
+@Slf4j
 public class SnmpClientConfiguration {
+  @Bean
+  public USM usm() {
+    OctetString localEngineId = new OctetString(MPv3.createLocalEngineID());
+    USM usm = new USM(SecurityProtocols.getInstance(), localEngineId, 0);
+    usm.setEngineDiscoveryEnabled(true);
+    return usm;
+  }
 
   @Bean(destroyMethod = "close")
-  public Snmp snmp() throws IOException {
+  public Snmp snmp(USM usm) throws IOException {
+    SecurityProtocols.getInstance().addDefaultProtocols();
+
+    SecurityModels securityModels = new SecurityModels();
+    securityModels.addSecurityModel(usm);
+
+    MPv3 mpv3 = new MPv3(usm.getLocalEngineID().getValue());
+    mpv3.setSecurityModels(securityModels);
+
+    MessageDispatcher dispatcher = new MessageDispatcherImpl();
+    dispatcher.addMessageProcessingModel(new MPv1());
+    dispatcher.addMessageProcessingModel(new MPv2c());
+    dispatcher.addMessageProcessingModel(mpv3);
+
     TransportMapping<UdpAddress> transport = new DefaultUdpTransportMapping();
-    Snmp snmp = new Snmp(transport);
-    USM usm = new USM(SecurityProtocols.getInstance(), new OctetString(MPv3.createLocalEngineID()), 0);
-    usm.setEngineDiscoveryEnabled(true);
-    SecurityModels.getInstance().addSecurityModel(usm);
+    Snmp snmp = new Snmp(dispatcher, transport);
     transport.listen();
     return snmp;
   }
 
   @Bean
-  public Consumer<ProtocolRecord> snmpUserRegistry(Snmp snmp) {
+  public BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry(USM usm) {
     Set<String> registeredUsers = ConcurrentHashMap.newKeySet();
-    return protocol -> {
+    return (protocol, address) -> {
       JsonNode config = protocol.config();
       String username = config.get("username").asString();
-      if (registeredUsers.add(username)) {
-        snmp.getUSM().addUser(new UsmUser(
+      String key = username + ":"
+          + config.get("authProtocol").asString() + ":"
+          + config.get("privProtocol").asString();
+      if (registeredUsers.add(key)) {
+        usm.addUser(               // ← directamente sobre el USM bean
             new OctetString(username),
-            resolveAuthProtocol(config.get("authProtocol").asString()),
-            new OctetString(config.get("authPassword").asString()),
-            resolvePrivProtocol(config.get("privProtocol").asString()),
-            new OctetString(config.get("privPassword").asString())
-        ));
+            null,
+            new UsmUser(
+                new OctetString(username),
+                resolveAuthProtocol(config.get("authProtocol").asString()),
+                new OctetString(config.get("authPassword").asString()),
+                resolvePrivProtocol(config.get("privProtocol").asString()),
+                new OctetString(config.get("privPassword").asString())
+            )
+        );
+        log.debug("Registered SNMP user: {}", key);
       }
     };
   }
@@ -61,7 +91,7 @@ public class SnmpClientConfiguration {
 
   private static OID resolvePrivProtocol(String protocol) {
     return switch (protocol.toUpperCase()) {
-      case "AES-128" -> PrivAES128.ID;
+      case "AES", "AES-128" -> PrivAES128.ID;
       case "AES-256" -> PrivAES256.ID;
       default -> PrivDES.ID;
     };

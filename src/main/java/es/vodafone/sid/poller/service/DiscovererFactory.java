@@ -9,10 +9,12 @@ import es.vodafone.sid.poller.walker.SshWalker;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
 import org.snmp4j.Snmp;
+import org.snmp4j.smi.UdpAddress;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 @Component
@@ -24,7 +26,7 @@ public class DiscovererFactory {
   private final ProtocolRepository protocolRepository;
   private final SshClient sshClient;
   private final Snmp snmp;
-  private final Consumer<ProtocolRecord> snmpUserRegistry;
+  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
 
   public Callable<List<SourceRecord>> create(DiscovererRecord discoverer, WalkersService walkersService) {
     return switch (discoverer.protocol().toUpperCase()) {

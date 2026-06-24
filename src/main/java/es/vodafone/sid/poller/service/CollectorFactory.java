@@ -10,10 +10,12 @@ import es.vodafone.sid.poller.worker.SshWorker;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
 import org.snmp4j.Snmp;
+import org.snmp4j.smi.UdpAddress;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -25,7 +27,7 @@ public class CollectorFactory {
   private final ProtocolRepository protocolRepository;
   private final SshClient sshClient;
   private final Snmp snmp;
-  private final Consumer<ProtocolRecord> snmpUserRegistry;
+  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
 
   public Callable<List<MetricRecord>> create(CollectorRecord collector, WorkersService workersService) {
