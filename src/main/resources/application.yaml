@@ -17,6 +17,6 @@ logging:
     es:
       vodafone:
         sid:
-          poller: debug
+          poller: DEBUG
     org:
       snmp4j: TRACE
