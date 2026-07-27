@@ -20,10 +20,10 @@ public class CollectorService {
   public CollectorService(Callable<List<MetricRecord>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
     this.collectorRecord = collectorRecord;
     this.collector = collector;
-    this.executor = Executors.newSingleThreadExecutor(r -> {
-      Thread t = new Thread(r, "CollectorsService-" + collectorRecord.name());
-      t.setDaemon(false);
-      return t;
+    this.executor = Executors.newSingleThreadExecutor(runnable -> {
+      Thread thread = new Thread(runnable, "CollectorsService-" + collectorRecord.name());
+      thread.setDaemon(false);
+      return thread;
     });
     this.metricRepository = metricRepository;
   }
