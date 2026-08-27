@@ -17,8 +17,10 @@ public class MetricRepository {
                 instant, src_id, element_id, element_type_id,
                 site_id, cdc_id, zone_id, net_id, arch_id,
                 group_id, service_id, service_type_id, value
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """;    jdbc.batchUpdate(sql, metricRecords, metricRecords.size(), (ps, metricRecord) -> {
+            ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              WHERE EXISTS (SELECT 1 FROM source WHERE id = ? AND active = true)
+            """;
+    jdbc.batchUpdate(sql, metricRecords, metricRecords.size(), (ps, metricRecord) -> {
       ps.setObject(1, metricRecord.instant());
       ps.setShort(2, metricRecord.srcId());
       ps.setShort(3, metricRecord.elementId());
@@ -32,6 +34,7 @@ public class MetricRepository {
       ps.setShort(11, metricRecord.serviceId());
       ps.setShort(12, metricRecord.serviceTypeId());
       ps.setObject(13, metricRecord.value());
+      ps.setShort(14, metricRecord.srcId());
     });
   }
 }

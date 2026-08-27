@@ -18,6 +18,7 @@ import org.snmp4j.util.TreeEvent;
 import org.snmp4j.util.TreeUtils;
 import tools.jackson.databind.JsonNode;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -113,7 +114,9 @@ public class SnmpWalker implements Callable<List<SourceRecord>> {
             address,
             null,
             null,
-            0.0
+            BigInteger.ZERO,
+            pattern.scale(),
+            true
         ));
       }
     }

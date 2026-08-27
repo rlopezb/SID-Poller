@@ -14,5 +14,6 @@ public record PatternRecord(
     String address,
     String pattern,
     String check,
-    String name
+    String name,
+    Short scale
 ) {}

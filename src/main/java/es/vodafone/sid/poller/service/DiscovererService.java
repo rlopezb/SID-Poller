@@ -63,8 +63,7 @@ public class DiscovererService {
       short collectorId = Short.parseShort(parts[1]);
 
       List<SourceRecord> discoveredGroup = entry.getValue();
-      List<SourceRecord> existingGroup = sourceRepository
-          .findByElementIdAndCollectorId(elementId, collectorId);
+      List<SourceRecord> existingGroup = sourceRepository.findByElementIdAndCollectorIdAndDiscovererId(elementId, collectorId, discovererRecord.id());
 
       List<SourceRecord> toInsert = discoveredGroup.stream()
           .filter(candidate -> existingGroup.stream().noneMatch(candidate::isSame))
@@ -75,13 +74,30 @@ public class DiscovererService {
         toInsert.forEach(sourceRepository::insert);
       }
 
-      List<SourceRecord> toDelete = existingGroup.stream()
+      List<SourceRecord> toReactivate = existingGroup.stream()
+          .filter(existing -> discoveredGroup.stream().anyMatch(existing::isSame))
+          .toList();
+      toReactivate.forEach(source -> sourceRepository.setActive(source.id(), true));
+
+      List<SourceRecord> disappeared = existingGroup.stream()
           .filter(existing -> discoveredGroup.stream().noneMatch(existing::isSame))
           .toList();
+      List<SourceRecord> toDeactivate = disappeared.stream()
+          .filter(source -> sourceRepository.hasMetrics(source.id()))
+          .toList();
+      if (!toDeactivate.isEmpty()) {
+        log.info("{} deactivating {} disappeared sources with metrics for element {}",
+            discovererRecord.name(), toDeactivate.size(), elementId);
+        toDeactivate.forEach(source -> sourceRepository.setActive(source.id(), false));
+      }
+
+      List<SourceRecord> toDelete = disappeared.stream()
+          .filter(source -> !toDeactivate.contains(source))
+          .toList();
       if (!toDelete.isEmpty()) {
-        log.info("{} deleting {} disappeared sources for element {}",
+        log.info("{} deleting {} disappeared sources without metrics for element {}",
             discovererRecord.name(), toDelete.size(), elementId);
-        toDelete.forEach(s -> sourceRepository.deleteById(s.id()));
+        toDelete.forEach(source -> sourceRepository.deleteById(source.id()));
       }
     }
   }

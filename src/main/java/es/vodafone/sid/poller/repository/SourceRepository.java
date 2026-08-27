@@ -6,6 +6,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -33,18 +35,26 @@ public class SourceRepository {
       rs.getString("address"),
       rs.getString("capture"),
       rs.getObject("instant", OffsetDateTime.class),
-      rs.getDouble("cache")
+      rs.getObject("cache", java.math.BigDecimal.class) != null
+          ? rs.getObject("cache", java.math.BigDecimal.class).toBigInteger()
+          : null,
+      rs.getDouble("scale"),
+      rs.getBoolean("active")
   );
   public List<SourceRecord> findAll() {
     return jdbcTemplate.query("select * from source", ROW_MAPPER);
   }
 
   public List<SourceRecord> findByCollectorId(short collectorId) {
-    return jdbcTemplate.query("select * from source where collector_id = ?", ROW_MAPPER, collectorId);
+    return jdbcTemplate.query("select * from source where collector_id = ? and active = true", ROW_MAPPER, collectorId);
   }
 
   public List<SourceRecord> findByElementIdAndCollectorId(short elementId, short collectorId) {
     return jdbcTemplate.query("select * from source where collector_id = ? and element_id = ? ", ROW_MAPPER, collectorId, elementId);
+  }
+
+  public List<SourceRecord> findByElementIdAndCollectorIdAndDiscovererId(short elementId, short collectorId, short discovererId) {
+    return jdbcTemplate.query("select * from source where collector_id = ? and element_id = ?  and discoverer_id = ?", ROW_MAPPER, collectorId, elementId, discovererId);
   }
 
   public void insert(SourceRecord sourceRecord) {
@@ -53,23 +63,33 @@ public class SourceRepository {
             name, description, type, element_id, element_type_id,
             site_id, cdc_id, zone_id, net_id, arch_id,
             group_id, service_id, service_type_id,
-            collector_id, discoverer_id, address, capture
-        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            collector_id, discoverer_id, address, capture, instant, cache, scale, active
+        ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         sourceRecord.name(), sourceRecord.description(), sourceRecord.type(),
         sourceRecord.elementId(), sourceRecord.elementTypeId(),
         sourceRecord.siteId(), sourceRecord.cdcId(), sourceRecord.zoneId(), sourceRecord.netId(), sourceRecord.archId(),
         sourceRecord.groupId(), sourceRecord.serviceId(), sourceRecord.serviceTypeId(),
         sourceRecord.collectorId(), sourceRecord.discovererId(),
-        sourceRecord.address(), sourceRecord.capture()
+        sourceRecord.address(), sourceRecord.capture(), sourceRecord.instant(), sourceRecord.cache(), sourceRecord.scale(), sourceRecord.active()
     );
+  }
+
+  public boolean hasMetrics(short sourceId) {
+    return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+        "select exists (select 1 from metric where src_id = ?)", Boolean.class, sourceId));
+  }
+
+  public void setActive(short id, boolean active) {
+    jdbcTemplate.update(
+        "update source set active = ? where id = ? and active is distinct from ?", active, id, active);
   }
 
   public void deleteById(short id) {
     jdbcTemplate.update("delete from source where id = ?", id);
   }
 
-  public void updateCacheAndInstant(short id, double cache, OffsetDateTime instant) {
-    jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?", cache, instant, id);
+  public void updateCacheAndInstant(short id, BigInteger cache, OffsetDateTime instant) {
+    jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?", new BigDecimal(cache), instant, id);
   }
 }

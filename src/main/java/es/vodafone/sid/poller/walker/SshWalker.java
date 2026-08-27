@@ -12,6 +12,7 @@ import org.apache.sshd.client.session.ClientSession;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -106,7 +107,9 @@ public class SshWalker implements Callable<List<SourceRecord>> {
           address,
           null,
           null,
-          0.0
+          BigInteger.ZERO,
+          pattern.scale(),
+          true
       ));
     }
     return sources;

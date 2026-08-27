@@ -17,7 +17,7 @@ public class ScaledSourceType extends BaseSourceType {
         SourceRecord source = sources.getFirst();
         try {
             BigInteger scaled = new BigDecimal(rawValue.trim())
-                .multiply(BigDecimal.valueOf(source.cache()))
+                .multiply(new BigDecimal(source.scale()))
                 .toBigInteger();
             return List.of(metric(source, instant, scaled));
         } catch (NumberFormatException e) {

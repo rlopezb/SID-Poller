@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
@@ -64,6 +63,7 @@ public class CollectorFactory {
       ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       int maxOid = protocol.config().get("maxOid").asInt();
+      if(maxOid==0) maxOid = group.size();
       for (List<SourceRecord> chunk : partition(group, maxOid)) {
         workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
       }

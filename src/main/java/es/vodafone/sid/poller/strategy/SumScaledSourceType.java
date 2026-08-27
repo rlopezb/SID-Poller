@@ -22,7 +22,7 @@ public class SumScaledSourceType extends BaseSourceType {
                 .filter(s -> !s.isBlank())
                 .map(BigDecimal::new)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigInteger scaled = sum.multiply(BigDecimal.valueOf(source.cache())).toBigInteger();
+            BigInteger scaled = sum.multiply(new BigDecimal(source.scale())).toBigInteger();
             return List.of(metric(source, instant, scaled));
         } catch (NumberFormatException e) {
             log.warn("Could not parse sum scaled value '{}' for source {}", rawValue, source.name());

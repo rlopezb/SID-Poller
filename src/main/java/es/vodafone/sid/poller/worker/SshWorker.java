@@ -55,7 +55,7 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       List<MetricRecord> metrics = new ArrayList<>();
 
       List<SourceRecord> singleSources = sources.stream()
-          .filter(s -> s.type() != SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+          .filter(source -> !source.isMulti())
           .toList();
       for (SourceRecord source : singleSources) {
         String rawValue = executeCommand(session, source.address(), timeout);
@@ -67,12 +67,12 @@ public class SshWorker implements Callable<List<MetricRecord>> {
       }
 
       Map<String, List<SourceRecord>> multiSources = sources.stream()
-          .filter(s -> s.type() == SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+          .filter(SourceRecord::isMulti)
           .collect(Collectors.groupingBy(SourceRecord::address));
       for (Map.Entry<String, List<SourceRecord>> entry : multiSources.entrySet()) {
         String rawValue = executeCommand(session, entry.getKey(), timeout);
         if (rawValue != null) {
-          metrics.addAll(sourceTypeRegistry.get(SourceTypeRegistry.TYPE_MULTI_CAPTURE)
+          metrics.addAll(sourceTypeRegistry.get(SourceTypeRegistry.getMulti())
               .apply(rawValue, entry.getValue(), instant));
         } else {
           entry.getValue().forEach(source -> metrics.add(BaseSourceType.nullMetric(source, instant)));

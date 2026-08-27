@@ -1,5 +1,8 @@
 package es.vodafone.sid.poller.model;
 
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+
+import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
@@ -23,8 +26,14 @@ public record SourceRecord(
     String address,
     String capture,
     OffsetDateTime instant,
-    double cache
+    BigInteger cache,
+    double scale,
+    boolean active
 ) {
+  public boolean isMulti() {
+    return type == SourceTypeRegistry.getMulti();
+  }
+
   public boolean isSame(SourceRecord other) {
     return this.name().equals(other.name())
         && Objects.equals(this.description(), other.description())
@@ -42,6 +51,7 @@ public record SourceRecord(
         && this.collectorId() == other.collectorId()
         && this.discovererId() == other.discovererId()
         && this.address().equals(other.address())
-        && Objects.equals(this.capture(), other.capture());
+        && Objects.equals(this.capture(), other.capture())
+        && this.scale() == other.scale();
   }
 }

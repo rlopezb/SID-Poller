@@ -27,7 +27,8 @@ public class PatternRepository {
       rs.getString("address"),
       rs.getString("pattern"),
       rs.getString("check"),
-      rs.getString("name")
+      rs.getString("name"),
+      rs.getShort("scale")
   );
 
   public List<PatternRecord> findByDiscovererAndElementTypeId(String discoverer, short elementTypeId) {
