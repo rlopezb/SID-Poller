@@ -1,5 +1,6 @@
 package es.vodafone.sid.poller.service;
 
+import es.vodafone.sid.poller.collector.Collector;
 import es.vodafone.sid.poller.model.*;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
@@ -7,6 +8,7 @@ import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.SshWorker;
+import es.vodafone.sid.poller.worker.Worker;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
 import org.snmp4j.Snmp;
@@ -14,7 +16,6 @@ import org.snmp4j.smi.UdpAddress;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,7 @@ public class CollectorFactory {
   private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
 
-  public Callable<List<MetricRecord>> create(CollectorRecord collector, WorkersService workersService) {
+  public Collector create(CollectorRecord collector, WorkersService workersService) {
     return switch (collector.protocol().toUpperCase()) {
       case "SSH"  -> () -> collectSsh(collector, workersService);
       case "SNMP" -> () -> collectSnmp(collector, workersService);
@@ -41,7 +42,7 @@ public class CollectorFactory {
     List<SourceRecord> sources = sourceRepository.findByCollectorId(collector.id());
     Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
-    List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
+    List<Worker> workers = new ArrayList<>();
     for (List<SourceRecord> group : groupByElement(sources)) {
       ElementRecord element = elementRepository.findById(group.getFirst().elementId());
       short elementTypeId = element.elementTypeId();
@@ -56,7 +57,7 @@ public class CollectorFactory {
     List<SourceRecord> sources = sourceRepository.findByCollectorId(collector.id());
     Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
 
-    List<Callable<List<MetricRecord>>> workers = new ArrayList<>();
+    List<Worker> workers = new ArrayList<>();
     for (List<SourceRecord> group : groupByElement(sources)) {
       ElementRecord element = elementRepository.findById(group.getFirst().elementId());
       short elementTypeId = element.elementTypeId();

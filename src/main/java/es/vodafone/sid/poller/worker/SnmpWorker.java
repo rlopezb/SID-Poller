@@ -23,15 +23,14 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 
 @Slf4j
 @RequiredArgsConstructor
-public class SnmpWorker implements Callable<List<MetricRecord>> {
-  private final ElementRecord element;
-  private final List<SourceRecord> sources;
-  private final ProtocolRecord protocol;
+public class SnmpWorker implements Worker {
+  private final ElementRecord elementRecord;
+  private final List<SourceRecord> sourceRecords;
+  private final ProtocolRecord protocolRecord;
   private final Snmp snmp;
   private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
@@ -39,19 +38,19 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
   @Override
   public List<MetricRecord> call() {
 
-    JsonNode config = protocol.config();
+    JsonNode config = protocolRecord.config();
     int port = config.get("port").asInt(161);
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
-    Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
-    snmpUserRegistry.accept(protocol, target.getAddress());
-    PDU pdu = buildPdu(sources);
+    Target<UdpAddress> target = buildTarget(elementRecord.name(), port, username, securityLevel);
+    snmpUserRegistry.accept(protocolRecord, target.getAddress());
+    PDU pdu = buildPdu(sourceRecords);
     OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     try {
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
-        log.warn("No SNMP response from {}", element.name());
-        return sources.stream()
+        log.warn("No SNMP response from {}", elementRecord.name());
+        return sourceRecords.stream()
             .map(source -> BaseSourceType.nullMetric(source, instant))
             .toList();
       }
@@ -59,14 +58,14 @@ public class SnmpWorker implements Callable<List<MetricRecord>> {
       List<MetricRecord> metrics = new ArrayList<>();
       for (int i = 0; i < response.size(); i++) {
         String rawValue = response.get(i).getVariable().toString();
-        SourceRecord source = sources.get(i);
+        SourceRecord source = sourceRecords.get(i);
         metrics.addAll(sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), instant));
       }
       return metrics;
 
     } catch (IOException e) {
-      log.error("SNMP request failed to {}", element.name(), e);
-      return sources.stream()
+      log.error("SNMP request failed to {}", elementRecord.name(), e);
+      return sourceRecords.stream()
           .map(source -> BaseSourceType.nullMetric(source, instant))
           .toList();
     }

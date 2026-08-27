@@ -21,44 +21,43 @@ import tools.jackson.databind.JsonNode;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class SnmpWalker implements Callable<List<SourceRecord>> {
+public class SnmpWalker implements Walker {
 
   private final short discovererId;
-  private final ElementRecord element;
-  private final List<PatternRecord> patterns;
-  private final ProtocolRecord protocol;
+  private final ElementRecord elementRecord;
+  private final List<PatternRecord> patternRecords;
+  private final ProtocolRecord protocolRecord;
   private final Snmp snmp;
   private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
 
-  public SnmpWalker(short discovererId, ElementRecord element, List<PatternRecord> patterns,
-                    ProtocolRecord protocol, Snmp snmp, BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry) {
+  public SnmpWalker(short discovererId, ElementRecord elementRecord, List<PatternRecord> patternRecords,
+                    ProtocolRecord protocolRecord, Snmp snmp, BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry) {
     this.discovererId = discovererId;
-    this.element = element;
-    this.patterns = patterns;
-    this.protocol = protocol;
+    this.elementRecord = elementRecord;
+    this.patternRecords = patternRecords;
+    this.protocolRecord = protocolRecord;
     this.snmp = snmp;
     this.snmpUserRegistry = snmpUserRegistry;
   }
 
   @Override
   public List<SourceRecord> call() {
-    JsonNode config = protocol.config();
+    JsonNode config = protocolRecord.config();
     int port = config.get("port").asInt(161);
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
 
-    Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
-    snmpUserRegistry.accept(protocol, target.getAddress());
+    Target<UdpAddress> target = buildTarget(elementRecord.name(), port, username, securityLevel);
+    snmpUserRegistry.accept(protocolRecord, target.getAddress());
     TreeUtils treeUtils = new TreeUtils(snmp, new DefaultPDUFactory());
 
     List<SourceRecord> discovered = new ArrayList<>();
-    for (PatternRecord pattern : patterns) {
+    for (PatternRecord pattern : patternRecords) {
       List<SourceRecord> sources = walk(treeUtils, target, pattern);
       discovered.addAll(sources);
     }
@@ -74,7 +73,7 @@ public class SnmpWalker implements Callable<List<SourceRecord>> {
     for (TreeEvent event : events) {
       if (event == null || event.isError()) {
         log.warn("SNMP walk error on {} for OID {}: {}",
-            element.name(), pattern.address(),
+            elementRecord.name(), pattern.address(),
             event != null ? event.getErrorMessage() : "null event");
         continue;
       }
@@ -99,13 +98,13 @@ public class SnmpWalker implements Callable<List<SourceRecord>> {
             name,
             null,
             pattern.srcType(),
-            element.id(),
-            element.elementTypeId(),
-            element.siteId(),
-            element.cdcId(),
-            element.zoneId(),
-            element.netId(),
-            element.archId(),
+            elementRecord.id(),
+            elementRecord.elementTypeId(),
+            elementRecord.siteId(),
+            elementRecord.cdcId(),
+            elementRecord.zoneId(),
+            elementRecord.netId(),
+            elementRecord.archId(),
             pattern.grpId(),
             pattern.serviceId(),
             pattern.serviceTypeId(),

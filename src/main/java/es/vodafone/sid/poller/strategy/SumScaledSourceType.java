@@ -14,19 +14,19 @@ import java.util.List;
 public class SumScaledSourceType extends BaseSourceType {
 
     @Override
-    public List<MetricRecord> apply(String rawValue, List<SourceRecord> sources, OffsetDateTime instant) {
-        SourceRecord source = sources.getFirst();
+    public List<MetricRecord> apply(String rawValue, List<SourceRecord> sourceRecords, OffsetDateTime instant) {
+        SourceRecord sourceRecordsFirst = sourceRecords.getFirst();
         try {
             BigDecimal sum = Arrays.stream(rawValue.split("\\n"))
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .map(BigDecimal::new)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigInteger scaled = sum.multiply(new BigDecimal(source.scale())).toBigInteger();
-            return List.of(metric(source, instant, scaled));
+            BigInteger scaled = sum.multiply(new BigDecimal(sourceRecordsFirst.scale())).toBigInteger();
+            return List.of(metric(sourceRecordsFirst, instant, scaled));
         } catch (NumberFormatException e) {
-            log.warn("Could not parse sum scaled value '{}' for source {}", rawValue, source.name());
-            return List.of(nullMetric(source, instant));
+            log.warn("Could not parse sum scaled value '{}' for sourceRecordsFirst {}", rawValue, sourceRecordsFirst.name());
+            return List.of(nullMetric(sourceRecordsFirst, instant));
         }
     }
 }

@@ -1,6 +1,7 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.MetricRecord;
+import es.vodafone.sid.poller.worker.Worker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// This service is responsible for executing a list of workers concurrently and collecting their results.
 @Slf4j
 public class WorkersService {
   private final ExecutorService executor;
@@ -21,14 +23,14 @@ public class WorkersService {
     this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));
   }
 
-  private static ThreadFactory createThreadFactory(String poolName) {
+  private static ThreadFactory createThreadFactory(String name) {
     return new ThreadFactory() {
       private final AtomicInteger count = new AtomicInteger(0);
 
       @Override
       public Thread newThread(@NonNull Runnable runnable) {
         Thread thread = Thread.ofVirtual()
-            .name(poolName + "-worker-" + count.incrementAndGet())
+            .name(name + "-worker-" + count.incrementAndGet())
             .unstarted(runnable);
         thread.setUncaughtExceptionHandler((t, e) ->
             log.error("Uncaught exception in thread {}: {}", t.getName(), e.getMessage(), e)
@@ -38,7 +40,7 @@ public class WorkersService {
     };
   }
 
-  public List<MetricRecord> get(List<Callable<List<MetricRecord>>> workers) {
+  public List<MetricRecord> get(List<Worker> workers) {
     List<Future<List<MetricRecord>>> futures = null;
     try {
       futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);

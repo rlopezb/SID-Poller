@@ -1,6 +1,7 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.walker.Walker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
@@ -10,6 +11,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
+// This service is responsible for executing a list of Walker tasks concurrently with a specified timeout.
 public class WalkersService {
   private final ExecutorService executor;
   private final String name;
@@ -38,7 +40,7 @@ public class WalkersService {
     };
   }
 
-  public List<SourceRecord> get(List<Callable<List<SourceRecord>>> walkers) {
+  public List<SourceRecord> get(List<Walker> walkers) {
     List<SourceRecord> discovered = new ArrayList<>();
     try {
       List<Future<List<SourceRecord>>> futures = executor.invokeAll(walkers, walkerTimeout, TimeUnit.MILLISECONDS);

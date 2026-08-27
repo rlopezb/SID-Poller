@@ -1,5 +1,6 @@
 package es.vodafone.sid.poller.service;
 
+import es.vodafone.sid.poller.collector.Collector;
 import es.vodafone.sid.poller.model.CollectorRecord;
 import es.vodafone.sid.poller.model.MetricRecord;
 import es.vodafone.sid.poller.repository.MetricRepository;
@@ -14,13 +15,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public class CollectorService {
   @Getter
   private final CollectorRecord collectorRecord;
-  private final Callable<List<MetricRecord>> collector;
+  private final Collector collector;
   private final MetricRepository metricRepository;
 
   private final AtomicReference<ExecutorService> executorRef = new AtomicReference<>();
   private final AtomicReference<Future<List<MetricRecord>>> activeFuture = new AtomicReference<>();
 
-  public CollectorService(Callable<List<MetricRecord>> collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
+  public CollectorService(Collector collector, CollectorRecord collectorRecord, MetricRepository metricRepository) {
     this.collectorRecord = collectorRecord;
     this.collector = collector;
     this.metricRepository = metricRepository;

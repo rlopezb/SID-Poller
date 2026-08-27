@@ -1,5 +1,6 @@
 package es.vodafone.sid.poller.service;
 
+import es.vodafone.sid.poller.discoverer.Discoverer;
 import es.vodafone.sid.poller.model.DiscovererRecord;
 import es.vodafone.sid.poller.model.SourceRecord;
 import es.vodafone.sid.poller.repository.SourceRepository;
@@ -16,11 +17,11 @@ public class DiscovererService {
 
   @Getter
   private final DiscovererRecord discovererRecord;
-  private final Callable<List<SourceRecord>> discoverer;
+  private final Discoverer discoverer;
   private final SourceRepository sourceRepository;
   private final ExecutorService executor;
 
-  public DiscovererService(Callable<List<SourceRecord>> discoverer,
+  public DiscovererService(Discoverer discoverer,
                            DiscovererRecord discovererRecord,
                            SourceRepository sourceRepository) {
     this.discoverer = discoverer;

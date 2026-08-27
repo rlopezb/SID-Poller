@@ -17,36 +17,35 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class SshWalker implements Callable<List<SourceRecord>> {
+public class SshWalker implements Walker {
 
   private final short discovererId;
-  private final ElementRecord element;
-  private final List<PatternRecord> patterns;
-  private final ProtocolRecord protocol;
+  private final ElementRecord elementRecord;
+  private final List<PatternRecord> patternRecords;
+  private final ProtocolRecord protocolRecord;
   private final SshClient sshClient;
 
-  public SshWalker(short discovererId, ElementRecord element, List<PatternRecord> patterns,
-                   ProtocolRecord protocol, SshClient sshClient) {
+  public SshWalker(short discovererId, ElementRecord elementRecord, List<PatternRecord> patternRecords,
+                   ProtocolRecord protocolRecord, SshClient sshClient) {
     this.discovererId = discovererId;
-    this.element = element;
-    this.patterns = patterns;
-    this.protocol = protocol;
+    this.elementRecord = elementRecord;
+    this.patternRecords = patternRecords;
+    this.protocolRecord = protocolRecord;
     this.sshClient = sshClient;
   }
 
   @Override
   public List<SourceRecord> call() {
-    String host = element.name();
-    String username = protocol.config().get("username").asString();
-    String password = protocol.config().get("password").asString();
-    int port = protocol.config().get("port").asInt(22);
-    long timeout = protocol.config().get("connectTimeout").asLong(10000);
+    String host = elementRecord.name();
+    String username = protocolRecord.config().get("username").asString();
+    String password = protocolRecord.config().get("password").asString();
+    int port = protocolRecord.config().get("port").asInt(22);
+    long timeout = protocolRecord.config().get("connectTimeout").asLong(10000);
 
     try (ClientSession session = sshClient
         .connect(username, host, port)
@@ -57,7 +56,7 @@ public class SshWalker implements Callable<List<SourceRecord>> {
       session.auth().verify(timeout, TimeUnit.MILLISECONDS);
 
       List<SourceRecord> discovered = new ArrayList<>();
-      for (PatternRecord pattern : patterns) {
+      for (PatternRecord pattern : patternRecords) {
         String rawValue = executeCommand(session, pattern.address(), timeout);
         if (rawValue != null) {
           discovered.addAll(discover(pattern, rawValue));
@@ -92,13 +91,13 @@ public class SshWalker implements Callable<List<SourceRecord>> {
           name,
           null,
           pattern.srcType(),
-          element.id(),
-          element.elementTypeId(),
-          element.siteId(),
-          element.cdcId(),
-          element.zoneId(),
-          element.netId(),
-          element.archId(),
+          elementRecord.id(),
+          elementRecord.elementTypeId(),
+          elementRecord.siteId(),
+          elementRecord.cdcId(),
+          elementRecord.zoneId(),
+          elementRecord.netId(),
+          elementRecord.archId(),
           pattern.grpId(),
           pattern.serviceId(),
           pattern.serviceTypeId(),
@@ -124,7 +123,7 @@ public class SshWalker implements Callable<List<SourceRecord>> {
       channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), timeout);
       return output.toString(StandardCharsets.UTF_8).trim();
     } catch (IOException e) {
-      log.error("Command '{}' failed on {}", command, element.name(), e);
+      log.error("Command '{}' failed on {}", command, elementRecord.name(), e);
       return null;
     }
   }
