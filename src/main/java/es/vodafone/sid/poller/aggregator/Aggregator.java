@@ -1,9 +1,9 @@
-package es.vodafone.sid.poller.worker;
+package es.vodafone.sid.poller.aggregator;
 
 import es.vodafone.sid.poller.model.Metric;
 
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public interface Worker extends Callable<List<Metric>> {
+public interface Aggregator extends Callable<List<Metric>> {
 }

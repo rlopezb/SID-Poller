@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.repository;
 
-import es.vodafone.sid.poller.model.ElementRecord;
+import es.vodafone.sid.poller.model.Element;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,7 +13,7 @@ import java.util.List;
 public class ElementRepository {
   private final JdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<ElementRecord> ROW_MAPPER = (rs, _) -> new ElementRecord(
+  private static final RowMapper<Element> ROW_MAPPER = (rs, _) -> new Element(
       rs.getShort("id"),
       rs.getString("name"),
       rs.getShort("element_type_id"),
@@ -25,11 +25,11 @@ public class ElementRepository {
 
   );
 
-  public ElementRecord findById(short id) {
+  public Element findById(short id) {
     return jdbcTemplate.queryForObject("select * from element where id = ?", ROW_MAPPER, id);
   }
 
-  public List<ElementRecord> findAll() {
+  public List<Element> findAll() {
     return jdbcTemplate.query("select * from element", ROW_MAPPER);
   }
 }

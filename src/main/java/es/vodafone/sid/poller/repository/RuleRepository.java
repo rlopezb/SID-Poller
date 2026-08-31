@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.repository;
 
-import es.vodafone.sid.poller.model.PatternRecord;
+import es.vodafone.sid.poller.model.Rule;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -10,10 +10,10 @@ import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
-public class PatternRepository {
+public class RuleRepository {
   private final JdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<PatternRecord> ROW_MAPPER = (rs, _) -> new PatternRecord(
+  private static final RowMapper<Rule> ROW_MAPPER = (rs, _) -> new Rule(
       rs.getShort("id"),
       rs.getShort("element_type_id"),
       rs.getString("discoverer"),
@@ -31,9 +31,9 @@ public class PatternRepository {
       rs.getShort("scale")
   );
 
-  public List<PatternRecord> findByDiscovererAndElementTypeId(String discoverer, short elementTypeId) {
+  public List<Rule> findByDiscovererAndElementTypeId(String discoverer, short elementTypeId) {
     return jdbcTemplate.query(
-        "select * from pattern where discoverer = ? and element_type_id = ?",
+        "select * from rule where discoverer = ? and element_type_id = ?",
         ROW_MAPPER, discoverer, elementTypeId
     );
   }

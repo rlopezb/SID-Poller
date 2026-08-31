@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.configuration;
 
-import es.vodafone.sid.poller.model.ProtocolRecord;
+import es.vodafone.sid.poller.model.Protocol;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.*;
 
@@ -55,7 +55,7 @@ public class SnmpClientConfiguration {
   }
 
   @Bean
-  public BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry(USM usm) {
+  public BiConsumer<Protocol, UdpAddress> snmpUserRegistry(USM usm) {
     Set<String> registeredUsers = ConcurrentHashMap.newKeySet();
     return (protocol, address) -> {
       JsonNode config = protocol.config();

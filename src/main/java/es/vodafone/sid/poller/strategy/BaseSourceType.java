@@ -1,15 +1,15 @@
 package es.vodafone.sid.poller.strategy;
 
-import es.vodafone.sid.poller.model.MetricRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.Source;
 
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 
 public abstract class BaseSourceType implements SourceType {
 
-    protected static MetricRecord metric(SourceRecord source, OffsetDateTime instant, BigInteger value) {
-        return new MetricRecord(
+    protected static Metric metric(Source source, OffsetDateTime instant, BigInteger value) {
+        return new Metric(
             instant,
             source.id(), source.elementId(), source.elementTypeId(),
             source.siteId(), source.cdcId(), source.zoneId(), source.netId(),
@@ -22,7 +22,7 @@ public abstract class BaseSourceType implements SourceType {
         return new BigInteger(rawValue.trim());
     }
 
-    public static MetricRecord nullMetric(SourceRecord source, OffsetDateTime instant) {
+    public static Metric nullMetric(Source source, OffsetDateTime instant) {
         return metric(source, instant, null);
     }
 }

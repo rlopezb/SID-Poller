@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.collector.Collector;
+import es.vodafone.sid.poller.aggregator.Aggregator;
 import es.vodafone.sid.poller.model.*;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
@@ -21,16 +21,16 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
-public class CollectorFactory {
+public class AggregatorFactory {
   private final ElementRepository elementRepository;
   private final SourceRepository sourceRepository;
   private final ProtocolRepository protocolRepository;
   private final SshClient sshClient;
   private final Snmp snmp;
-  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
+  private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
 
-  public Collector create(CollectorRecord collector, WorkersService workersService) {
+  public Aggregator create(Collector collector, WorkersService workersService) {
     return switch (collector.protocol().toUpperCase()) {
       case "SSH"  -> () -> collectSsh(collector, workersService);
       case "SNMP" -> () -> collectSnmp(collector, workersService);
@@ -38,43 +38,43 @@ public class CollectorFactory {
     };
   }
 
-  private List<MetricRecord> collectSsh(CollectorRecord collector, WorkersService workersService) {
-    List<SourceRecord> sources = sourceRepository.findByCollectorId(collector.id());
-    Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
+  private List<Metric> collectSsh(Collector collector, WorkersService workersService) {
+    List<Source> sources = sourceRepository.findByCollectorId(collector.id());
+    Map<Short, Protocol> protocolCache = new HashMap<>();
 
     List<Worker> workers = new ArrayList<>();
-    for (List<SourceRecord> group : groupByElement(sources)) {
-      ElementRecord element = elementRepository.findById(group.getFirst().elementId());
+    for (List<Source> group : groupByElement(sources)) {
+      Element element = elementRepository.findById(group.getFirst().elementId());
       short elementTypeId = element.elementTypeId();
-      ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
+      Protocol protocol = protocolCache.computeIfAbsent(elementTypeId,
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
     }
     return workersService.get(workers);
   }
 
-  private List<MetricRecord> collectSnmp(CollectorRecord collector, WorkersService workersService) {
-    List<SourceRecord> sources = sourceRepository.findByCollectorId(collector.id());
-    Map<Short, ProtocolRecord> protocolCache = new HashMap<>();
+  private List<Metric> collectSnmp(Collector collector, WorkersService workersService) {
+    List<Source> sources = sourceRepository.findByCollectorId(collector.id());
+    Map<Short, Protocol> protocolCache = new HashMap<>();
 
     List<Worker> workers = new ArrayList<>();
-    for (List<SourceRecord> group : groupByElement(sources)) {
-      ElementRecord element = elementRepository.findById(group.getFirst().elementId());
+    for (List<Source> group : groupByElement(sources)) {
+      Element element = elementRepository.findById(group.getFirst().elementId());
       short elementTypeId = element.elementTypeId();
-      ProtocolRecord protocol = protocolCache.computeIfAbsent(elementTypeId,
+      Protocol protocol = protocolCache.computeIfAbsent(elementTypeId,
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       int maxOid = protocol.config().get("maxOid").asInt();
       if(maxOid==0) maxOid = group.size();
-      for (List<SourceRecord> chunk : partition(group, maxOid)) {
+      for (List<Source> chunk : partition(group, maxOid)) {
         workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
       }
     }
     return workersService.get(workers);
   }
 
-  private static Collection<List<SourceRecord>> groupByElement(List<SourceRecord> sources) {
+  private static Collection<List<Source>> groupByElement(List<Source> sources) {
     return sources.stream()
-        .collect(Collectors.groupingBy(SourceRecord::elementId))
+        .collect(Collectors.groupingBy(Source::elementId))
         .values();
   }
 

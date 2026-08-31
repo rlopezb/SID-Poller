@@ -1,8 +1,8 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.discoverer.Discoverer;
-import es.vodafone.sid.poller.model.DiscovererRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.finder.Finder;
+import es.vodafone.sid.poller.model.Discoverer;
+import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -13,106 +13,106 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-public class DiscovererService {
+public class FinderService {
 
   @Getter
-  private final DiscovererRecord discovererRecord;
+  private final Finder finder;
   private final Discoverer discoverer;
   private final SourceRepository sourceRepository;
   private final ExecutorService executor;
 
-  public DiscovererService(Discoverer discoverer,
-                           DiscovererRecord discovererRecord,
-                           SourceRepository sourceRepository) {
+  public FinderService(Finder finder,
+                       Discoverer discoverer,
+                       SourceRepository sourceRepository) {
+    this.finder = finder;
     this.discoverer = discoverer;
-    this.discovererRecord = discovererRecord;
     this.sourceRepository = sourceRepository;
     this.executor = Executors.newSingleThreadExecutor(r -> {
-      Thread t = new Thread(r, "DiscovererService-" + discovererRecord.name());
+      Thread t = new Thread(r, "FinderService-" + discoverer.name());
       t.setDaemon(false);
       return t;
     });
   }
 
-  public void discover() {
-    Future<List<SourceRecord>> future = executor.submit(discoverer);
+  public void find() {
+    Future<List<Source>> future = executor.submit(finder);
     try {
-      List<SourceRecord> discovered = future.get(discovererRecord.discovererTimeout(), TimeUnit.MILLISECONDS);
-      if (discovered != null) {
-        log.debug("{} discoverer found {} sources", discovererRecord.name(), discovered.size());
-        reconcile(discovered);
+      List<Source> found = future.get(discoverer.discovererTimeout(), TimeUnit.MILLISECONDS);
+      if (found != null) {
+        log.debug("{} finder found {} sources", discoverer.name(), found.size());
+        reconcile(found);
       } else {
-        log.warn("{} discoverer returned null", discovererRecord.name());
+        log.warn("{} finder returned null", discoverer.name());
       }
     } catch (InterruptedException e) {
       future.cancel(true);
-      log.error("{} discoverer interrupted", discovererRecord.name(), e);
+      log.error("{} finder interrupted", discoverer.name(), e);
       Thread.currentThread().interrupt();
     } catch (ExecutionException | TimeoutException e) {
       future.cancel(true);
-      log.error("{} discoverer failed ({})", discovererRecord.name(), e.getClass().getSimpleName());
+      log.error("{} finder failed ({})", discoverer.name(), e.getClass().getSimpleName());
     }
   }
 
-  private void reconcile(List<SourceRecord> discovered) {
-    Map<String, List<SourceRecord>> discoveredByKey = discovered.stream()
+  private void reconcile(List<Source> discovered) {
+    Map<String, List<Source>> discoveredByKey = discovered.stream()
         .collect(Collectors.groupingBy(s -> s.elementId() + ":" + s.collectorId()));
 
-    for (Map.Entry<String, List<SourceRecord>> entry : discoveredByKey.entrySet()) {
+    for (Map.Entry<String, List<Source>> entry : discoveredByKey.entrySet()) {
       String[] parts = entry.getKey().split(":");
       short elementId = Short.parseShort(parts[0]);
       short collectorId = Short.parseShort(parts[1]);
 
-      List<SourceRecord> discoveredGroup = entry.getValue();
-      List<SourceRecord> existingGroup = sourceRepository.findByElementIdAndCollectorIdAndDiscovererId(elementId, collectorId, discovererRecord.id());
+      List<Source> discoveredGroup = entry.getValue();
+      List<Source> existingGroup = sourceRepository.findByElementIdAndCollectorIdAndDiscovererId(elementId, collectorId, discoverer.id());
 
-      List<SourceRecord> toInsert = discoveredGroup.stream()
+      List<Source> toInsert = discoveredGroup.stream()
           .filter(candidate -> existingGroup.stream().noneMatch(candidate::isSame))
           .toList();
       if (!toInsert.isEmpty()) {
         log.info("{} inserting {} new sources for element {}",
-            discovererRecord.name(), toInsert.size(), elementId);
+            discoverer.name(), toInsert.size(), elementId);
         toInsert.forEach(sourceRepository::insert);
       }
 
-      List<SourceRecord> toReactivate = existingGroup.stream()
+      List<Source> toReactivate = existingGroup.stream()
           .filter(existing -> discoveredGroup.stream().anyMatch(existing::isSame))
           .toList();
       toReactivate.forEach(source -> sourceRepository.setActive(source.id(), true));
 
-      List<SourceRecord> disappeared = existingGroup.stream()
+      List<Source> disappeared = existingGroup.stream()
           .filter(existing -> discoveredGroup.stream().noneMatch(existing::isSame))
           .toList();
-      List<SourceRecord> toDeactivate = disappeared.stream()
+      List<Source> toDeactivate = disappeared.stream()
           .filter(source -> sourceRepository.hasMetrics(source.id()))
           .toList();
       if (!toDeactivate.isEmpty()) {
         log.info("{} deactivating {} disappeared sources with metrics for element {}",
-            discovererRecord.name(), toDeactivate.size(), elementId);
+            discoverer.name(), toDeactivate.size(), elementId);
         toDeactivate.forEach(source -> sourceRepository.setActive(source.id(), false));
       }
 
-      List<SourceRecord> toDelete = disappeared.stream()
+      List<Source> toDelete = disappeared.stream()
           .filter(source -> !toDeactivate.contains(source))
           .toList();
       if (!toDelete.isEmpty()) {
         log.info("{} deleting {} disappeared sources without metrics for element {}",
-            discovererRecord.name(), toDelete.size(), elementId);
+            discoverer.name(), toDelete.size(), elementId);
         toDelete.forEach(source -> sourceRepository.deleteById(source.id()));
       }
     }
   }
 
   public String getCron() {
-    return discovererRecord.cron();
+    return discoverer.cron();
   }
 
   public void shutdown() {
-    log.info("Shutting down {} DiscovererService executor", discovererRecord.name());
+    log.info("Shutting down {} FinderService executor", discoverer.name());
     executor.shutdown();
     try {
       if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-        log.warn("{} executor did not terminate, forcing shutdown", discovererRecord.name());
+        log.warn("{} executor did not terminate, forcing shutdown", discoverer.name());
         executor.shutdownNow();
       }
     } catch (InterruptedException e) {

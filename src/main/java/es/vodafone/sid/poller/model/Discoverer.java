@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.model;
 
-public record DiscovererRecord(
+public record Discoverer(
     short id,
     String name,
     String protocol,

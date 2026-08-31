@@ -1,9 +1,9 @@
 package es.vodafone.sid.poller.worker;
 
-import es.vodafone.sid.poller.model.ElementRecord;
-import es.vodafone.sid.poller.model.MetricRecord;
-import es.vodafone.sid.poller.model.ProtocolRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Element;
+import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.Protocol;
+import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import es.vodafone.sid.poller.strategy.BaseSourceType;
 import lombok.RequiredArgsConstructor;
@@ -28,44 +28,44 @@ import java.util.function.BiConsumer;
 @Slf4j
 @RequiredArgsConstructor
 public class SnmpWorker implements Worker {
-  private final ElementRecord elementRecord;
-  private final List<SourceRecord> sourceRecords;
-  private final ProtocolRecord protocolRecord;
+  private final Element element;
+  private final List<Source> sources;
+  private final Protocol protocol;
   private final Snmp snmp;
-  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
+  private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
 
   @Override
-  public List<MetricRecord> call() {
+  public List<Metric> call() {
 
-    JsonNode config = protocolRecord.config();
+    JsonNode config = protocol.config();
     int port = config.get("port").asInt(161);
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
-    Target<UdpAddress> target = buildTarget(elementRecord.name(), port, username, securityLevel);
-    snmpUserRegistry.accept(protocolRecord, target.getAddress());
-    PDU pdu = buildPdu(sourceRecords);
+    Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
+    snmpUserRegistry.accept(protocol, target.getAddress());
+    PDU pdu = buildPdu(sources);
     OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
     try {
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
-        log.warn("No SNMP response from {}", elementRecord.name());
-        return sourceRecords.stream()
+        log.warn("No SNMP response from {}", element.name());
+        return sources.stream()
             .map(source -> BaseSourceType.nullMetric(source, instant))
             .toList();
       }
       PDU response = event.getResponse();
-      List<MetricRecord> metrics = new ArrayList<>();
+      List<Metric> metrics = new ArrayList<>();
       for (int i = 0; i < response.size(); i++) {
         String rawValue = response.get(i).getVariable().toString();
-        SourceRecord source = sourceRecords.get(i);
+        Source source = sources.get(i);
         metrics.addAll(sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), instant));
       }
       return metrics;
 
     } catch (IOException e) {
-      log.error("SNMP request failed to {}", elementRecord.name(), e);
-      return sourceRecords.stream()
+      log.error("SNMP request failed to {}", element.name(), e);
+      return sources.stream()
           .map(source -> BaseSourceType.nullMetric(source, instant))
           .toList();
     }
@@ -82,7 +82,7 @@ public class SnmpWorker implements Worker {
     return target;
   }
 
-  private PDU buildPdu(List<SourceRecord> sources) {
+  private PDU buildPdu(List<Source> sources) {
     ScopedPDU pdu = new ScopedPDU();
     pdu.setType(PDU.GET);
     sources.forEach(source -> pdu.add(new VariableBinding(new OID(source.address()))));

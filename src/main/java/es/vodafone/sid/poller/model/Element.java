@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.model;
 
-public record ElementRecord(
+public record Element(
     short id,
     String name,
     short elementTypeId,

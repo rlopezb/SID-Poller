@@ -1,6 +1,5 @@
 package es.vodafone.sid.poller.strategy;
 
-import es.vodafone.sid.poller.model.SourceRecord;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

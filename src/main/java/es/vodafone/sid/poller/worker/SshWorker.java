@@ -1,9 +1,9 @@
 package es.vodafone.sid.poller.worker;
 
-import es.vodafone.sid.poller.model.ElementRecord;
-import es.vodafone.sid.poller.model.MetricRecord;
-import es.vodafone.sid.poller.model.ProtocolRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Element;
+import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.Protocol;
+import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.strategy.BaseSourceType;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
@@ -18,122 +18,134 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
 public class SshWorker implements Worker {
-  private final ElementRecord elementRecord;
-  private final List<SourceRecord> sourceRecords;
-  private final ProtocolRecord protocolRecord;
+  private final Element element;
+  private final List<Source> sources;
+  private final Protocol protocol;
   private final SshClient sshClient;
   private final SourceTypeRegistry sourceTypeRegistry;
 
   @Override
-  public List<MetricRecord> call() {
-    List<SourceRecord> sources = sourceRecords == null ? List.of() : sourceRecords;
-    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
+  public List<Metric> call() {
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
     try {
-      String host = elementRecord.name();
-      var config = protocolRecord.config();
-      String username = config.get("username").asString();
-      String password = config.get("password").asString();
-      int port = config.get("port").asInt(22);
-      long timeout = config.get("connectTimeout").asLong(10000);
+      String host = element.name();
+      String username = protocol.config().get("username").asString();
+      String password = protocol.config().get("password").asString();
+      int port = protocol.config().get("port").asInt(22);
+      long connectTimeout = protocol.config().get("connectTimeout").asLong(10000);
 
       try (ClientSession session = sshClient.connect(username, host, port)
-          .verify(timeout, TimeUnit.MILLISECONDS)
+          .verify(connectTimeout, TimeUnit.MILLISECONDS)
           .getSession()) {
         session.addPasswordIdentity(password);
-        session.auth().verify(timeout, TimeUnit.MILLISECONDS);
+        session.auth().verify(connectTimeout, TimeUnit.MILLISECONDS);
 
-        Map<Short, MetricRecord> metricsBySourceId = new HashMap<>();
-        sources.stream()
-            .filter(source -> !source.isMulti())
-            .forEach(source -> metricsBySourceId.put(
-                source.id(), measure(source, executeCommand(session, source.address(), timeout), instant)));
+        // Metrics map by source
+        Map<Short, Metric> metricMap = new HashMap<>();
+        // Single source metricMap
+        for (Source source : sources) {
+          if (!source.isMulti()) {
+            String rawValue = executeCommand(session, source.address());
+            metricMap.put(source.id(), measure(source, rawValue, now));
+          }
+        }
 
-        Map<String, List<SourceRecord>> multiSources = sources.stream()
-            .filter(SourceRecord::isMulti)
-            .filter(source -> source.address() != null)
-            .collect(Collectors.groupingBy(SourceRecord::address));
-        for (Map.Entry<String, List<SourceRecord>> entry : multiSources.entrySet()) {
+        // Multi source metricMap
+        Map<String, List<Source>> multiSources = new HashMap<>();
+        for (Source source : sources) {
+          if (source.isMulti()) {
+            if (source.address() != null) {
+              multiSources.computeIfAbsent(source.address(), k -> new ArrayList<>()).add(source);
+            }
+          }
+        }
+        for (Map.Entry<String, List<Source>> entry : multiSources.entrySet()) {
+          String address =  entry.getKey();
+          List<Source> sources = entry.getValue();
           try {
-            String rawValue = executeCommand(session, entry.getKey(), timeout);
-            List<MetricRecord> metrics = rawValue == null
+            String rawValue = executeCommand(session, address);
+            List<Metric> multiMetrics = rawValue == null
                 ? List.of()
                 : sourceTypeRegistry.get(SourceTypeRegistry.getMulti())
-                    .apply(rawValue, entry.getValue(), instant);
-            if (metrics != null) {
-              metrics.forEach(metric -> metricsBySourceId.put(metric.srcId(), metric));
+                    .apply(rawValue, sources, now);
+            if (multiMetrics != null) {
+              multiMetrics.forEach(metric -> metricMap.put(metric.srcId(), metric));
             }
           } catch (RuntimeException e) {
             log.warn("Could not measure multi-source command '{}' on {}", entry.getKey(), host, e);
           }
         }
 
-        return sources.stream()
-            .map(source -> metricsBySourceId.getOrDefault(
-                source.id(), BaseSourceType.nullMetric(source, instant)))
-            .toList();
+        List<Metric> metrics = new ArrayList<>();
+        for (Source source : sources) {
+          Metric orDefault = metricMap.getOrDefault(
+              source.id(), BaseSourceType.nullMetric(source, now));
+          metrics.add(orDefault);
+        }
+        return metrics;
       }
     } catch (IOException | RuntimeException e) {
-      log.error("SSH collection failed to {}", elementRecord.name(), e);
-      return nullMetrics(sources, instant);
+      log.error("SSH collection failed to {}", element.name(), e);
+      return nullMetrics(sources, now);
     }
   }
 
-  private MetricRecord measure(SourceRecord sourceRecord, String rawValue, OffsetDateTime instant) {
+  private Metric measure(Source source, String rawValue, OffsetDateTime instant) {
     if (rawValue == null || rawValue.isBlank()) {
-      return BaseSourceType.nullMetric(sourceRecord, instant);
+      return BaseSourceType.nullMetric(source, instant);
     }
 
     try {
-      List<MetricRecord> metrics = sourceTypeRegistry.get(sourceRecord.type())
-          .apply(rawValue, List.of(sourceRecord), instant);
+      List<Metric> metrics = sourceTypeRegistry.get(source.type())
+          .apply(rawValue, List.of(source), instant);
       return metrics != null && metrics.size() == 1 && metrics.getFirst() != null
           ? metrics.getFirst()
-          : BaseSourceType.nullMetric(sourceRecord, instant);
+          : BaseSourceType.nullMetric(source, instant);
     } catch (RuntimeException e) {
-      log.warn("Could not measure source {}", sourceRecord.name(), e);
-      return BaseSourceType.nullMetric(sourceRecord, instant);
+      log.warn("Could not measure source {}", source.name(), e);
+      return BaseSourceType.nullMetric(source, instant);
     }
   }
 
-  private List<MetricRecord> nullMetrics(List<SourceRecord> sources, OffsetDateTime instant) {
-    return sources.stream()
-        .map(source -> BaseSourceType.nullMetric(source, instant))
-        .toList();
+  private List<Metric> nullMetrics(List<Source> sources, OffsetDateTime instant) {
+    List<Metric> metrics = new ArrayList<>();
+    for (Source source : sources) {
+      Metric metric = BaseSourceType.nullMetric(source, instant);
+      metrics.add(metric);
+    }
+    return metrics;
   }
 
-  private String executeCommand(ClientSession session, String command, long timeout) {
+  private String executeCommand(ClientSession session, String command) {
     log.debug("Executing ssh command: {}", command);
+    long execTimeout = protocol.config().get("execTimeout").asLong(10000);
     try (ChannelExec channel = session.createExecChannel(command)) {
       ByteArrayOutputStream output = new ByteArrayOutputStream();
       channel.setOut(output);
-      channel.open().verify(timeout, TimeUnit.MILLISECONDS);
-      var events = channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), timeout);
+      channel.open().verify(execTimeout, TimeUnit.MILLISECONDS);
+      var events = channel.waitFor(EnumSet.of(ClientChannelEvent.CLOSED), execTimeout);
       if (!events.contains(ClientChannelEvent.CLOSED)) {
         channel.close(true);
-        log.warn("SSH command '{}' timed out on {}", command, elementRecord.name());
+        log.warn("SSH command '{}' timed out on {}", command, element.name());
         return null;
       }
       Integer exitStatus = channel.getExitStatus();
       if (exitStatus != null && exitStatus != 0) {
-        log.warn("SSH command '{}' exited with status {} on {}", command, exitStatus, elementRecord.name());
+        log.warn("SSH command '{}' exited with status {} on {}", command, exitStatus, element.name());
         return null;
       }
       String result = output.toString(StandardCharsets.UTF_8).trim();
       log.debug("SSH command result: {}", result);
       return result.isBlank() ? null : result;
     } catch (IOException | RuntimeException e) {
-      log.error("Command '{}' failed on {}", command, elementRecord.name(), e);
+      log.error("Command '{}' failed on {}", command, element.name(), e);
       return null;
     }
   }

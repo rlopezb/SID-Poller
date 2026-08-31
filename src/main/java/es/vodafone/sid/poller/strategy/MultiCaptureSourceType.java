@@ -1,7 +1,7 @@
 package es.vodafone.sid.poller.strategy;
 
-import es.vodafone.sid.poller.model.MetricRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigInteger;
@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
 public class MultiCaptureSourceType extends BaseSourceType {
 
     @Override
-    public List<MetricRecord> apply(String rawValue, List<SourceRecord> sources, OffsetDateTime instant) {
-        List<MetricRecord> metrics = new ArrayList<>();
-        for (SourceRecord source : sources) {
+    public List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant) {
+        List<Metric> metrics = new ArrayList<>();
+        for (Source source : sources) {
             Pattern pattern = Pattern.compile(source.capture());
             Matcher matcher = pattern.matcher(rawValue);
             if (matcher.find()) {

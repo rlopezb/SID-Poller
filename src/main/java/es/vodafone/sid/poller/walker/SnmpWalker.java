@@ -1,9 +1,9 @@
 package es.vodafone.sid.poller.walker;
 
-import es.vodafone.sid.poller.model.ElementRecord;
-import es.vodafone.sid.poller.model.PatternRecord;
-import es.vodafone.sid.poller.model.ProtocolRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Element;
+import es.vodafone.sid.poller.model.Rule;
+import es.vodafone.sid.poller.model.Protocol;
+import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
@@ -29,51 +29,51 @@ import java.util.regex.Pattern;
 public class SnmpWalker implements Walker {
 
   private final short discovererId;
-  private final ElementRecord elementRecord;
-  private final List<PatternRecord> patternRecords;
-  private final ProtocolRecord protocolRecord;
+  private final Element element;
+  private final List<Rule> rules;
+  private final Protocol protocol;
   private final Snmp snmp;
-  private final BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry;
+  private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
 
-  public SnmpWalker(short discovererId, ElementRecord elementRecord, List<PatternRecord> patternRecords,
-                    ProtocolRecord protocolRecord, Snmp snmp, BiConsumer<ProtocolRecord, UdpAddress> snmpUserRegistry) {
+  public SnmpWalker(short discovererId, Element element, List<Rule> rules,
+                    Protocol protocol, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry) {
     this.discovererId = discovererId;
-    this.elementRecord = elementRecord;
-    this.patternRecords = patternRecords;
-    this.protocolRecord = protocolRecord;
+    this.element = element;
+    this.rules = rules;
+    this.protocol = protocol;
     this.snmp = snmp;
     this.snmpUserRegistry = snmpUserRegistry;
   }
 
   @Override
-  public List<SourceRecord> call() {
-    JsonNode config = protocolRecord.config();
+  public List<Source> call() {
+    JsonNode config = protocol.config();
     int port = config.get("port").asInt(161);
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
 
-    Target<UdpAddress> target = buildTarget(elementRecord.name(), port, username, securityLevel);
-    snmpUserRegistry.accept(protocolRecord, target.getAddress());
+    Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
+    snmpUserRegistry.accept(protocol, target.getAddress());
     TreeUtils treeUtils = new TreeUtils(snmp, new DefaultPDUFactory());
 
-    List<SourceRecord> discovered = new ArrayList<>();
-    for (PatternRecord pattern : patternRecords) {
-      List<SourceRecord> sources = walk(treeUtils, target, pattern);
+    List<Source> discovered = new ArrayList<>();
+    for (Rule rule : rules) {
+      List<Source> sources = walk(treeUtils, target, rule);
       discovered.addAll(sources);
     }
     return discovered;
   }
 
-  private List<SourceRecord> walk(TreeUtils treeUtils, Target<UdpAddress> target, PatternRecord pattern) {
-    List<SourceRecord> sources = new ArrayList<>();
-    Pattern addressPattern = Pattern.compile(pattern.pattern());
-    Pattern namePattern = Pattern.compile(pattern.name());
+  private List<Source> walk(TreeUtils treeUtils, Target<UdpAddress> target, Rule rule) {
+    List<Source> sources = new ArrayList<>();
+    Pattern addressPattern = Pattern.compile(rule.pattern());
+    Pattern namePattern = Pattern.compile(rule.name());
 
-    List<TreeEvent> events = treeUtils.getSubtree(target, new OID(pattern.address()));
+    List<TreeEvent> events = treeUtils.getSubtree(target, new OID(rule.address()));
     for (TreeEvent event : events) {
       if (event == null || event.isError()) {
         log.warn("SNMP walk error on {} for OID {}: {}",
-            elementRecord.name(), pattern.address(),
+            element.name(), rule.address(),
             event != null ? event.getErrorMessage() : "null event");
         continue;
       }
@@ -85,7 +85,7 @@ public class SnmpWalker implements Walker {
         String oid = vb.getOid().toString();
         String value = vb.getVariable().toString();
 
-        // El pattern se aplica al valor devuelto
+        // El rule se aplica al valor devuelto
         Matcher addressMatcher = addressPattern.matcher(value);
         if (!addressMatcher.find()) continue;
 
@@ -93,28 +93,28 @@ public class SnmpWalker implements Walker {
         String name = nameMatcher.find() ? nameMatcher.group(1) : value;
         String address = addressMatcher.group(1);
 
-        sources.add(new SourceRecord(
+        sources.add(new Source(
             (short) 0,
             name,
             null,
-            pattern.srcType(),
-            elementRecord.id(),
-            elementRecord.elementTypeId(),
-            elementRecord.siteId(),
-            elementRecord.cdcId(),
-            elementRecord.zoneId(),
-            elementRecord.netId(),
-            elementRecord.archId(),
-            pattern.grpId(),
-            pattern.serviceId(),
-            pattern.serviceTypeId(),
-            pattern.collectorId(),
+            rule.srcType(),
+            element.id(),
+            element.elementTypeId(),
+            element.siteId(),
+            element.cdcId(),
+            element.zoneId(),
+            element.netId(),
+            element.archId(),
+            rule.grpId(),
+            rule.serviceId(),
+            rule.serviceTypeId(),
+            rule.collectorId(),
             discovererId,
             address,
             null,
             null,
             BigInteger.ZERO,
-            pattern.scale(),
+            rule.scale(),
             true
         ));
       }

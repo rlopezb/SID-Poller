@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.walker.Walker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -40,16 +40,16 @@ public class WalkersService {
     };
   }
 
-  public List<SourceRecord> get(List<Walker> walkers) {
-    List<SourceRecord> discovered = new ArrayList<>();
+  public List<Source> get(List<Walker> walkers) {
+    List<Source> discovered = new ArrayList<>();
     try {
-      List<Future<List<SourceRecord>>> futures = executor.invokeAll(walkers, walkerTimeout, TimeUnit.MILLISECONDS);
-      for (Future<List<SourceRecord>> future : futures) {
+      List<Future<List<Source>>> futures = executor.invokeAll(walkers, walkerTimeout, TimeUnit.MILLISECONDS);
+      for (Future<List<Source>> future : futures) {
         if (future.isCancelled()) {
           log.info("{} walker was cancelled", name);
         } else {
           try {
-            List<SourceRecord> sources = future.get();
+            List<Source> sources = future.get();
             if (sources != null) discovered.addAll(sources);
           } catch (ExecutionException e) {
             log.error("{} walker failed", name, e.getCause());

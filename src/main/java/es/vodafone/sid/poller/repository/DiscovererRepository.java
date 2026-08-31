@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.repository;
 
-import es.vodafone.sid.poller.model.DiscovererRecord;
+import es.vodafone.sid.poller.model.Discoverer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -13,7 +13,7 @@ import java.util.List;
 public class DiscovererRepository {
   private final JdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<DiscovererRecord> ROW_MAPPER = (rs, _) -> new DiscovererRecord(
+  private static final RowMapper<Discoverer> ROW_MAPPER = (rs, _) -> new Discoverer(
       rs.getShort("id"),
       rs.getString("name"),
       rs.getString("protocol"),
@@ -22,7 +22,7 @@ public class DiscovererRepository {
       rs.getInt("walker_timeout")
   );
 
-  public List<DiscovererRecord> findAll() {
+  public List<Discoverer> findAll() {
     return jdbcTemplate.query("select * from discoverer", ROW_MAPPER);
   }
 }

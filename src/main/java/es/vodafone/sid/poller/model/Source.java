@@ -6,7 +6,7 @@ import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 
-public record SourceRecord(
+public record Source(
     short id,
     String name,
     String description,
@@ -34,7 +34,7 @@ public record SourceRecord(
     return type == SourceTypeRegistry.getMulti();
   }
 
-  public boolean isSame(SourceRecord other) {
+  public boolean isSame(Source other) {
     return this.name().equals(other.name())
         && Objects.equals(this.description(), other.description())
         && this.type() == other.type()

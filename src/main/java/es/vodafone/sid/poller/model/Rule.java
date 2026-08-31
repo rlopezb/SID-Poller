@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.model;
 
-public record PatternRecord(
+public record Rule(
     short id,
     short elementTypeId,
     String discoverer,

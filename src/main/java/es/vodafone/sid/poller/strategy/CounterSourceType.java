@@ -1,7 +1,7 @@
 package es.vodafone.sid.poller.strategy;
 
-import es.vodafone.sid.poller.model.MetricRecord;
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +18,8 @@ public class CounterSourceType extends BaseSourceType {
     private final BigInteger wrapModulus;
 
     @Override
-    public List<MetricRecord> apply(String rawValue, List<SourceRecord> sources, OffsetDateTime instant) {
-        SourceRecord source = sources.getFirst();
+    public List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant) {
+        Source source = sources.getFirst();
         BigInteger current = new BigInteger(rawValue.trim());
 
         if (source.instant() == null) {

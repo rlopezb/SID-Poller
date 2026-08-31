@@ -1,9 +1,9 @@
 package es.vodafone.sid.poller.service;
 
-import es.vodafone.sid.poller.collector.Collector;
-import es.vodafone.sid.poller.discoverer.Discoverer;
-import es.vodafone.sid.poller.model.CollectorRecord;
-import es.vodafone.sid.poller.model.DiscovererRecord;
+import es.vodafone.sid.poller.aggregator.Aggregator;
+import es.vodafone.sid.poller.finder.Finder;
+import es.vodafone.sid.poller.model.Collector;
+import es.vodafone.sid.poller.model.Discoverer;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.DiscovererRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
@@ -25,64 +25,64 @@ import java.util.List;
 // This service is responsible for scheduling the execution of collectors and discoverers based on their cron expressions.
 public class SchedulerService implements SchedulingConfigurer {
 
-  private final CollectorFactory collectorFactory;
-  private final DiscovererFactory discovererFactory;
+  private final AggregatorFactory aggregatorFactory;
+  private final FinderFactory finderFactory;
   private final MetricRepository metricRepository;
   private final CollectorRepository collectorRepository;
   private final DiscovererRepository discovererRepository;
   private final SourceRepository sourceRepository;
 
-  private List<CollectorService> collectorServices = List.of();
-  private List<DiscovererService> discovererServices = List.of();
+  private List<AggregatorService> aggregatorServices = List.of();
+  private List<FinderService> finderServices = List.of();
   private final List<WorkersService> workersServices = new ArrayList<>();
   private final List<WalkersService> walkersServices = new ArrayList<>();
 
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
-    // Initialize collector services
-    // Reads all collector records from the database and creates a CollectorService for each one
-    // Schedules the collect method of each CollectorService to run according to its cron expression
-    this.collectorServices = collectorRepository.findAll().stream()
-        .map(this::createCollectorService)
+    // Initialize aggregator services
+    // Reads all collector records from the database and creates a AggregatorService for each one
+    // Schedules the aggregate method of each AggregatorService to run according to its cron expression
+    this.aggregatorServices = collectorRepository.findAll().stream()
+        .map(this::createAggregatorService)
         .toList();
-    collectorServices.forEach(cs ->
-        registrar.addCronTask(cs::collect, cs.getCollectorRecord().cron())
+    aggregatorServices.forEach(aggregatorService ->
+        registrar.addCronTask(aggregatorService::aggregate, aggregatorService.getCollector().cron())
     );
 
-    // Initialize discoverer services
-    // Reads all discoverer records from the database and creates a DiscovererService for each one
-    // Schedules the discover method of each DiscovererService to run according to its cron expression
-    this.discovererServices = discovererRepository.findAll().stream()
-        .map(this::createDiscovererService)
+    // Initialize finder services
+    // Reads all discoverer records from the database and creates a FinderService for each one
+    // Schedules the find method of each FinderService to run according to its cron expression
+    this.finderServices = discovererRepository.findAll().stream()
+        .map(this::createFinderService)
         .toList();
-    discovererServices.forEach(ds ->
-        registrar.addCronTask(ds::discover, ds.getCron())
+    finderServices.forEach(finderService ->
+        registrar.addCronTask(finderService::find, finderService.getCron())
     );
   }
 
-  private CollectorService createCollectorService(CollectorRecord collectorRecord) {
+  private AggregatorService createAggregatorService(Collector collector) {
     // Create a new WorkersService for the collector and add it to the list of workersServices
-    WorkersService workersService = new WorkersService(collectorRecord.workerTimeout(), collectorRecord.name());
+    WorkersService workersService = new WorkersService(collector.workerTimeout(), collector.name());
     workersServices.add(workersService);
-    // Create a new Collector for the CollectorService using the collectorFactory and the collectorRecord
-    Collector collector = collectorFactory.create(collectorRecord, workersService);
-    return new CollectorService(collector, collectorRecord, metricRepository);
+    // Create a new Aggregator for the AggregatorService using the aggregatorFactory and the collector
+    Aggregator aggregator = aggregatorFactory.create(collector, workersService);
+    return new AggregatorService(aggregator, collector, metricRepository);
   }
 
-  private DiscovererService createDiscovererService(DiscovererRecord discovererRecord) {
+  private FinderService createFinderService(Discoverer discoverer) {
     // Create a new WalkersService for the discoverer and add it to the list of walkersServices
-    WalkersService walkerService = new WalkersService(discovererRecord.workerTimeout(), discovererRecord.name());
+    WalkersService walkerService = new WalkersService(discoverer.workerTimeout(), discoverer.name());
     walkersServices.add(walkerService);
-    // Create a new Discoverer for the DiscovererService using the discovererFactory and the discovererRecord
-    Discoverer discoverer = discovererFactory.create(discovererRecord, walkerService);
-    return new DiscovererService(discoverer, discovererRecord, sourceRepository);
+    // Create a new Finder for the FinderService using the finderFactory and the discoverer
+    Finder finder = finderFactory.create(discoverer, walkerService);
+    return new FinderService(finder, discoverer, sourceRepository);
   }
 
   @PreDestroy
   public void shutdown() {
-    collectorServices.forEach(CollectorService::shutdown);
+    aggregatorServices.forEach(AggregatorService::shutdown);
     workersServices.forEach(WorkersService::shutdown);
-    discovererServices.forEach(DiscovererService::shutdown);
+    finderServices.forEach(FinderService::shutdown);
     walkersServices.forEach(WalkersService::shutdown);
   }
 }

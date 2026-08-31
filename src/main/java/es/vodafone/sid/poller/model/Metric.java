@@ -3,7 +3,7 @@ package es.vodafone.sid.poller.model;
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
 
-public record MetricRecord(
+public record Metric(
     OffsetDateTime instant,
     short srcId,
     short elementId,

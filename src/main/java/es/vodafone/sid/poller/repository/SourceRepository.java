@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.repository;
 
-import es.vodafone.sid.poller.model.SourceRecord;
+import es.vodafone.sid.poller.model.Source;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SourceRepository {
   private final JdbcTemplate jdbcTemplate;
-  private static final RowMapper<SourceRecord> ROW_MAPPER = (rs, _) -> new SourceRecord(
+  private static final RowMapper<Source> ROW_MAPPER = (rs, _) -> new Source(
       rs.getShort("id"),
       rs.getString("name"),
       rs.getString("description"),
@@ -41,23 +41,23 @@ public class SourceRepository {
       rs.getDouble("scale"),
       rs.getBoolean("active")
   );
-  public List<SourceRecord> findAll() {
+  public List<Source> findAll() {
     return jdbcTemplate.query("select * from source", ROW_MAPPER);
   }
 
-  public List<SourceRecord> findByCollectorId(short collectorId) {
+  public List<Source> findByCollectorId(short collectorId) {
     return jdbcTemplate.query("select * from source where collector_id = ? and active = true", ROW_MAPPER, collectorId);
   }
 
-  public List<SourceRecord> findByElementIdAndCollectorId(short elementId, short collectorId) {
+  public List<Source> findByElementIdAndCollectorId(short elementId, short collectorId) {
     return jdbcTemplate.query("select * from source where collector_id = ? and element_id = ? ", ROW_MAPPER, collectorId, elementId);
   }
 
-  public List<SourceRecord> findByElementIdAndCollectorIdAndDiscovererId(short elementId, short collectorId, short discovererId) {
+  public List<Source> findByElementIdAndCollectorIdAndDiscovererId(short elementId, short collectorId, short discovererId) {
     return jdbcTemplate.query("select * from source where collector_id = ? and element_id = ?  and discoverer_id = ?", ROW_MAPPER, collectorId, elementId, discovererId);
   }
 
-  public void insert(SourceRecord sourceRecord) {
+  public void insert(Source source) {
     jdbcTemplate.update("""
         insert into source (
             name, description, type, element_id, element_type_id,
@@ -66,12 +66,12 @@ public class SourceRepository {
             collector_id, discoverer_id, address, capture, instant, cache, scale, active
         ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        sourceRecord.name(), sourceRecord.description(), sourceRecord.type(),
-        sourceRecord.elementId(), sourceRecord.elementTypeId(),
-        sourceRecord.siteId(), sourceRecord.cdcId(), sourceRecord.zoneId(), sourceRecord.netId(), sourceRecord.archId(),
-        sourceRecord.groupId(), sourceRecord.serviceId(), sourceRecord.serviceTypeId(),
-        sourceRecord.collectorId(), sourceRecord.discovererId(),
-        sourceRecord.address(), sourceRecord.capture(), sourceRecord.instant(), sourceRecord.cache(), sourceRecord.scale(), sourceRecord.active()
+        source.name(), source.description(), source.type(),
+        source.elementId(), source.elementTypeId(),
+        source.siteId(), source.cdcId(), source.zoneId(), source.netId(), source.archId(),
+        source.groupId(), source.serviceId(), source.serviceTypeId(),
+        source.collectorId(), source.discovererId(),
+        source.address(), source.capture(), source.instant(), source.cache(), source.scale(), source.active()
     );
   }
 

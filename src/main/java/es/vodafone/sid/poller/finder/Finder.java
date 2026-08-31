@@ -1,9 +1,9 @@
-package es.vodafone.sid.poller.walker;
+package es.vodafone.sid.poller.finder;
 
 import es.vodafone.sid.poller.model.Source;
 
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public interface Walker extends Callable<List<Source>> {
+public interface Finder extends Callable<List<Source>> {
 }
