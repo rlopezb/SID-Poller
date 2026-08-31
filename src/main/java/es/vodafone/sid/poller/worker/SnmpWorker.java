@@ -15,6 +15,7 @@ import org.snmp4j.security.*;
 import org.snmp4j.smi.OID;
 import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.UdpAddress;
+import org.snmp4j.smi.Variable;
 import org.snmp4j.smi.VariableBinding;
 import tools.jackson.databind.JsonNode;
 
@@ -22,7 +23,9 @@ import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 @Slf4j
@@ -37,39 +40,71 @@ public class SnmpWorker implements Worker {
 
   @Override
   public List<Metric> call() {
-
-    JsonNode config = protocol.config();
-    int port = config.get("port").asInt(161);
-    String username = config.get("username").asString();
-    String securityLevel = config.get("securityLevel").asString("authPriv");
+    int port = protocol.config().get("port").asInt(161);
+    String username = protocol.config().get("username").asString();
+    String securityLevel = protocol.config().get("securityLevel").asString("authPriv");
     Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
     snmpUserRegistry.accept(protocol, target.getAddress());
     PDU pdu = buildPdu(sources);
-    OffsetDateTime instant = OffsetDateTime.now(ZoneOffset.UTC);
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    Map<Short, Metric> metricMap = new HashMap<>();
+
     try {
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
         log.warn("No SNMP response from {}", element.name());
-        return sources.stream()
-            .map(source -> BaseSourceType.nullMetric(source, instant))
-            .toList();
+        return buildMetrics(metricMap, now);
       }
       PDU response = event.getResponse();
-      List<Metric> metrics = new ArrayList<>();
-      for (int i = 0; i < response.size(); i++) {
-        String rawValue = response.get(i).getVariable().toString();
-        Source source = sources.get(i);
-        metrics.addAll(sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), instant));
+      if (response.getErrorStatus() != PDU.noError) {
+        log.warn("SNMP error response from {}: {} (errorIndex={})", element.name(), response.getErrorStatusText(), response.getErrorIndex());
+        return buildMetrics(metricMap, now);
       }
-      return metrics;
 
-    } catch (IOException e) {
+      Map<OID, Source> sourceByOid = new HashMap<>();
+      sources.forEach(source -> sourceByOid.put(new OID(source.address()), source));
+
+      for (int i = 0; i < response.size(); i++) {
+        VariableBinding vb = response.get(i);
+        OID oid = vb.getOid();
+        Source source = sourceByOid.get(oid);
+        if (source == null) {
+          log.warn("Unexpected OID {} in SNMP response from {} (not requested)", oid, element.name());
+          continue;
+        }
+
+        Variable variable = vb.getVariable();
+        if (variable == null || variable.isException()) {
+          log.debug("No value for OID {} ({}) on {}: {}", oid, source.name(), element.name(), variable);
+          continue;
+        }
+
+        try {
+          String rawValue = variable.toString();
+          List<Metric> parsed = sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), now);
+          if (parsed != null) {
+            parsed.forEach(metric -> metricMap.put(metric.srcId(), metric));
+          }
+        } catch (RuntimeException e) {
+          log.warn("Could not measure source {}", source.name(), e);
+        }
+      }
+      return buildMetrics(metricMap, now);
+
+    } catch (IOException | RuntimeException e) {
       log.error("SNMP request failed to {}", element.name(), e);
-      return sources.stream()
-          .map(source -> BaseSourceType.nullMetric(source, instant))
-          .toList();
+      return buildMetrics(metricMap, now);
     }
   }
+
+  private List<Metric> buildMetrics(Map<Short, Metric> metricMap, OffsetDateTime instant) {
+    List<Metric> metrics = new ArrayList<>();
+    for (Source source : sources) {
+      metrics.add(metricMap.getOrDefault(source.id(), BaseSourceType.nullMetric(source, instant)));
+    }
+    return metrics;
+  }
+
   private Target<UdpAddress> buildTarget(String host, int port,
                                          String username, String securityLevel) {
     UserTarget<UdpAddress> target = new UserTarget<>();
