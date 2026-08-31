@@ -12,12 +12,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 // This service is responsible for executing a list of Walker tasks concurrently with a specified timeout.
-public class WalkersService {
+public class WalkerService {
   private final ExecutorService executor;
   private final String name;
   private final long walkerTimeout;
 
-  public WalkersService(long walkerTimeout, String name) {
+  public WalkerService(long walkerTimeout, String name) {
     this.walkerTimeout = walkerTimeout;
     this.name = name;
     this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));

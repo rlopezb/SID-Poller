@@ -30,15 +30,15 @@ public class AggregatorFactory {
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
   private final SourceTypeRegistry sourceTypeRegistry;
 
-  public Aggregator create(Collector collector, WorkersService workersService) {
+  public Aggregator create(Collector collector, WorkerService workerService) {
     return switch (collector.protocol().toUpperCase()) {
-      case "SSH"  -> () -> collectSsh(collector, workersService);
-      case "SNMP" -> () -> collectSnmp(collector, workersService);
+      case "SSH"  -> () -> collectSsh(collector, workerService);
+      case "SNMP" -> () -> collectSnmp(collector, workerService);
       default -> throw new IllegalArgumentException("Unknown protocol: " + collector.protocol());
     };
   }
 
-  private List<Metric> collectSsh(Collector collector, WorkersService workersService) {
+  private List<Metric> collectSsh(Collector collector, WorkerService workerService) {
     List<Source> sources = sourceRepository.findByCollectorId(collector.id());
     Map<Short, Protocol> protocolCache = new HashMap<>();
 
@@ -50,10 +50,10 @@ public class AggregatorFactory {
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
     }
-    return workersService.get(workers);
+    return workerService.get(workers);
   }
 
-  private List<Metric> collectSnmp(Collector collector, WorkersService workersService) {
+  private List<Metric> collectSnmp(Collector collector, WorkerService workerService) {
     List<Source> sources = sourceRepository.findByCollectorId(collector.id());
     Map<Short, Protocol> protocolCache = new HashMap<>();
 
@@ -69,7 +69,7 @@ public class AggregatorFactory {
         workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
       }
     }
-    return workersService.get(workers);
+    return workerService.get(workers);
   }
 
   private static Collection<List<Source>> groupByElement(List<Source> sources) {

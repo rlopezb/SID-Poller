@@ -34,8 +34,8 @@ public class SchedulerService implements SchedulingConfigurer {
 
   private List<AggregatorService> aggregatorServices = List.of();
   private List<FinderService> finderServices = List.of();
-  private final List<WorkersService> workersServices = new ArrayList<>();
-  private final List<WalkersService> walkersServices = new ArrayList<>();
+  private final List<WorkerService> workerServices = new ArrayList<>();
+  private final List<WalkerService> walkerServices = new ArrayList<>();
 
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
@@ -62,17 +62,17 @@ public class SchedulerService implements SchedulingConfigurer {
 
   private AggregatorService createAggregatorService(Collector collector) {
     // Create a new WorkersService for the collector and add it to the list of workersServices
-    WorkersService workersService = new WorkersService(collector.workerTimeout(), collector.name());
-    workersServices.add(workersService);
+    WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
+    workerServices.add(workerService);
     // Create a new Aggregator for the AggregatorService using the aggregatorFactory and the collector
-    Aggregator aggregator = aggregatorFactory.create(collector, workersService);
+    Aggregator aggregator = aggregatorFactory.create(collector, workerService);
     return new AggregatorService(aggregator, collector, metricRepository);
   }
 
   private FinderService createFinderService(Discoverer discoverer) {
     // Create a new WalkersService for the discoverer and add it to the list of walkersServices
-    WalkersService walkerService = new WalkersService(discoverer.workerTimeout(), discoverer.name());
-    walkersServices.add(walkerService);
+    WalkerService walkerService = new WalkerService(discoverer.workerTimeout(), discoverer.name());
+    walkerServices.add(walkerService);
     // Create a new Finder for the FinderService using the finderFactory and the discoverer
     Finder finder = finderFactory.create(discoverer, walkerService);
     return new FinderService(finder, discoverer, sourceRepository);
@@ -81,8 +81,8 @@ public class SchedulerService implements SchedulingConfigurer {
   @PreDestroy
   public void shutdown() {
     aggregatorServices.forEach(AggregatorService::shutdown);
-    workersServices.forEach(WorkersService::shutdown);
+    workerServices.forEach(WorkerService::shutdown);
     finderServices.forEach(FinderService::shutdown);
-    walkersServices.forEach(WalkersService::shutdown);
+    walkerServices.forEach(WalkerService::shutdown);
   }
 }

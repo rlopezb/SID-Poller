@@ -33,6 +33,7 @@ public class SshWorker implements Worker {
   @Override
   public List<Metric> call() {
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    Map<Short, Metric> metricsMap = new HashMap<>();
 
     try {
       String host = element.name();
@@ -47,13 +48,20 @@ public class SshWorker implements Worker {
         session.addPasswordIdentity(password);
         session.auth().verify(connectTimeout, TimeUnit.MILLISECONDS);
 
-        // Metrics map by source
-        Map<Short, Metric> metricMap = new HashMap<>();
         // Single source metricMap
         for (Source source : sources) {
           if (!source.isMulti()) {
+            Metric metric = BaseSourceType.nullMetric(source, now);
             String rawValue = executeCommand(session, source.address());
-            metricMap.put(source.id(), measure(source, rawValue, now));
+            try {
+              List<Metric> metrics = sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), now);
+              if(metrics != null && metrics.size() == 1 && metrics.getFirst() != null){
+                metric = metrics.getFirst();
+              }
+            } catch (RuntimeException e) {
+              log.warn("Could not measure source {}", source.name(), e);
+            }
+            metricsMap.put(source.id(), metric);
           }
         }
 
@@ -62,63 +70,36 @@ public class SshWorker implements Worker {
         for (Source source : sources) {
           if (source.isMulti()) {
             if (source.address() != null) {
-              multiSources.computeIfAbsent(source.address(), k -> new ArrayList<>()).add(source);
+              multiSources.computeIfAbsent(source.address(), _ -> new ArrayList<>()).add(source);
             }
           }
         }
         for (Map.Entry<String, List<Source>> entry : multiSources.entrySet()) {
-          String address =  entry.getKey();
+          String address = entry.getKey();
           List<Source> sources = entry.getValue();
           try {
             String rawValue = executeCommand(session, address);
             List<Metric> multiMetrics = rawValue == null
                 ? List.of()
-                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti())
-                    .apply(rawValue, sources, now);
+                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti()).apply(rawValue, sources, now);
             if (multiMetrics != null) {
-              multiMetrics.forEach(metric -> metricMap.put(metric.srcId(), metric));
+              multiMetrics.forEach(metric -> metricsMap.put(metric.srcId(), metric));
             }
           } catch (RuntimeException e) {
             log.warn("Could not measure multi-source command '{}' on {}", entry.getKey(), host, e);
           }
         }
-
-        List<Metric> metrics = new ArrayList<>();
-        for (Source source : sources) {
-          Metric orDefault = metricMap.getOrDefault(
-              source.id(), BaseSourceType.nullMetric(source, now));
-          metrics.add(orDefault);
-        }
-        return metrics;
       }
     } catch (IOException | RuntimeException e) {
       log.error("SSH collection failed to {}", element.name(), e);
-      return nullMetrics(sources, now);
     }
+    return buildMetrics(metricsMap, now);
   }
 
-  private Metric measure(Source source, String rawValue, OffsetDateTime instant) {
-    if (rawValue == null || rawValue.isBlank()) {
-      return BaseSourceType.nullMetric(source, instant);
-    }
-
-    try {
-      List<Metric> metrics = sourceTypeRegistry.get(source.type())
-          .apply(rawValue, List.of(source), instant);
-      return metrics != null && metrics.size() == 1 && metrics.getFirst() != null
-          ? metrics.getFirst()
-          : BaseSourceType.nullMetric(source, instant);
-    } catch (RuntimeException e) {
-      log.warn("Could not measure source {}", source.name(), e);
-      return BaseSourceType.nullMetric(source, instant);
-    }
-  }
-
-  private List<Metric> nullMetrics(List<Source> sources, OffsetDateTime instant) {
+  private List<Metric> buildMetrics(Map<Short, Metric> metricsMap, OffsetDateTime now) {
     List<Metric> metrics = new ArrayList<>();
     for (Source source : sources) {
-      Metric metric = BaseSourceType.nullMetric(source, instant);
-      metrics.add(metric);
+      metrics.add(metricsMap.getOrDefault(source.id(), BaseSourceType.nullMetric(source, now)));
     }
     return metrics;
   }

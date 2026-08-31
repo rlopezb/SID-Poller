@@ -12,12 +12,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 // This service is responsible for executing a list of workers concurrently and collecting their results.
 @Slf4j
-public class WorkersService {
+public class WorkerService {
   private final ExecutorService executor;
   private final String name;
   private final long workerTimeout;
 
-  public WorkersService(long workerTimeout, String name) {
+  public WorkerService(long workerTimeout, String name) {
     this.workerTimeout = workerTimeout;
     this.name = name;
     this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));

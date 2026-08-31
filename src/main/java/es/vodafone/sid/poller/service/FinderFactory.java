@@ -28,15 +28,15 @@ public class FinderFactory {
   private final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
 
-  public Finder create(Discoverer discoverer, WalkersService walkersService) {
+  public Finder create(Discoverer discoverer, WalkerService walkerService) {
     return switch (discoverer.protocol().toUpperCase()) {
-      case "SSH"  -> () -> walkSsh(discoverer, walkersService);
-      case "SNMP" -> () -> walkSnmp(discoverer, walkersService);
+      case "SSH"  -> () -> walkSsh(discoverer, walkerService);
+      case "SNMP" -> () -> walkSnmp(discoverer, walkerService);
       default -> throw new IllegalArgumentException("Unknown protocol: " + discoverer.protocol());
     };
   }
 
-  private List<Source> walkSsh(Discoverer discoverer, WalkersService walkersService) {
+  private List<Source> walkSsh(Discoverer discoverer, WalkerService walkerService) {
     List<Element> elements = elementRepository.findAll();
     Map<Short, Protocol> protocolCache = new HashMap<>();
 
@@ -51,10 +51,10 @@ public class FinderFactory {
 
       walkers.add(new SshWalker(discoverer.id(), element, rules, protocol, sshClient));
     }
-    return walkersService.get(walkers);
+    return walkerService.get(walkers);
   }
 
-  private List<Source> walkSnmp(Discoverer discoverer, WalkersService walkersService) {
+  private List<Source> walkSnmp(Discoverer discoverer, WalkerService walkerService) {
     List<Element> elements = elementRepository.findAll();
     Map<Short, Protocol> protocolCache = new HashMap<>();
 
@@ -69,6 +69,6 @@ public class FinderFactory {
 
       walkers.add(new SnmpWalker(discoverer.id(), element, rules, protocol, snmp, snmpUserRegistry));
     }
-    return walkersService.get(walkers);
+    return walkerService.get(walkers);
   }
 }
