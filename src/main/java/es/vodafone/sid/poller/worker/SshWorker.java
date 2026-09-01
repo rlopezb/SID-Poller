@@ -48,60 +48,49 @@ public class SshWorker implements Worker {
         session.addPasswordIdentity(password);
         session.auth().verify(connectTimeout, TimeUnit.MILLISECONDS);
 
-        // Single source metricMap
         for (Source source : sources) {
-          if (!source.isMulti()) {
-            Metric metric = BaseSourceType.nullMetric(source, now);
-            String rawValue = executeCommand(session, source.address());
-            try {
-              List<Metric> metrics = sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), now);
-              if(metrics != null && metrics.size() == 1 && metrics.getFirst() != null){
-                metric = metrics.getFirst();
-              }
-            } catch (RuntimeException e) {
-              log.warn("Could not measure source {}", source.name(), e);
+          if (source.isMulti()) {
+            continue;
+          }
+          Metric metric = BaseSourceType.nullMetric(source, now);
+          String rawValue = executeCommand(session, source.address());
+          try {
+            List<Metric> metrics = sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), now);
+            if (metrics != null && !metrics.isEmpty() && metrics.getFirst() != null) {
+              metric = metrics.getFirst();
             }
-            metricsMap.put(source.id(), metric);
+          } catch (RuntimeException e) {
+            log.warn("Could not measure source {}", source.name(), e);
+          }
+          metricsMap.put(source.id(), metric);
+        }
+        Map<String, List<Source>> multiSources = new HashMap<>();
+        for (Source source : sources) {
+          if (source.isMulti() && source.address() != null) {
+            multiSources.computeIfAbsent(source.address(), _ -> new ArrayList<>()).add(source);
           }
         }
 
-        // Multi source metricMap
-        Map<String, List<Source>> multiSources = new HashMap<>();
-        for (Source source : sources) {
-          if (source.isMulti()) {
-            if (source.address() != null) {
-              multiSources.computeIfAbsent(source.address(), _ -> new ArrayList<>()).add(source);
-            }
-          }
-        }
         for (Map.Entry<String, List<Source>> entry : multiSources.entrySet()) {
           String address = entry.getKey();
-          List<Source> sources = entry.getValue();
+          List<Source> groupedSources = entry.getValue();
           try {
             String rawValue = executeCommand(session, address);
             List<Metric> multiMetrics = rawValue == null
                 ? List.of()
-                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti()).apply(rawValue, sources, now);
+                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti()).apply(rawValue, groupedSources, now);
             if (multiMetrics != null) {
               multiMetrics.forEach(metric -> metricsMap.put(metric.srcId(), metric));
             }
           } catch (RuntimeException e) {
-            log.warn("Could not measure multi-source command '{}' on {}", entry.getKey(), host, e);
+            log.warn("Could not measure multi-source command '{}' on {}", entry.getKey(), element.name(), e);
           }
         }
       }
     } catch (IOException | RuntimeException e) {
       log.error("SSH collection failed to {}", element.name(), e);
     }
-    return buildMetrics(metricsMap, now);
-  }
-
-  private List<Metric> buildMetrics(Map<Short, Metric> metricsMap, OffsetDateTime now) {
-    List<Metric> metrics = new ArrayList<>();
-    for (Source source : sources) {
-      metrics.add(metricsMap.getOrDefault(source.id(), BaseSourceType.nullMetric(source, now)));
-    }
-    return metrics;
+    return buildMetrics(sources, metricsMap, now);
   }
 
   private String executeCommand(ClientSession session, String command) {
