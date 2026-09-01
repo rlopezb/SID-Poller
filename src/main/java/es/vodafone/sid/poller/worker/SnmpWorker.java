@@ -17,7 +17,6 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.UdpAddress;
 import org.snmp4j.smi.Variable;
 import org.snmp4j.smi.VariableBinding;
-import tools.jackson.databind.JsonNode;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -40,15 +39,26 @@ public class SnmpWorker implements Worker {
 
   @Override
   public List<Metric> call() {
-    int port = protocol.config().get("port").asInt(161);
-    String username = protocol.config().get("username").asString();
+    UserTarget<UdpAddress> target = new UserTarget<>();
+    target.setAddress(new UdpAddress(element.name() + "/" + protocol.config().get("port").asInt(161)));
+    target.setRetries(1);
+    target.setTimeout(5000);
+    target.setVersion(SnmpConstants.version3);
     String securityLevel = protocol.config().get("securityLevel").asString("authPriv");
-    Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
+    int securityLevelInt = switch (securityLevel.toUpperCase()) {
+      case "AUTHNOPRIV" -> SecurityLevel.AUTH_NOPRIV;
+      case "AUTHPRIV" -> SecurityLevel.AUTH_PRIV;
+      default -> SecurityLevel.NOAUTH_NOPRIV;
+    };
+    target.setSecurityLevel(securityLevelInt);
+    target.setSecurityName(new OctetString(protocol.config().get("username").asString()));
     snmpUserRegistry.accept(protocol, target.getAddress());
-    PDU pdu = buildPdu(sources);
+
+    ScopedPDU pdu = new ScopedPDU();
+    pdu.setType(PDU.GET);
+    sources.forEach(source -> pdu.add(new VariableBinding(new OID(source.address()))));
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     Map<Short, Metric> metricMap = new HashMap<>();
-
     try {
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
@@ -103,32 +113,5 @@ public class SnmpWorker implements Worker {
       metrics.add(metricMap.getOrDefault(source.id(), BaseSourceType.nullMetric(source, instant)));
     }
     return metrics;
-  }
-
-  private Target<UdpAddress> buildTarget(String host, int port,
-                                         String username, String securityLevel) {
-    UserTarget<UdpAddress> target = new UserTarget<>();
-    target.setAddress(new UdpAddress(host + "/" + port));
-    target.setRetries(1);
-    target.setTimeout(5000);
-    target.setVersion(SnmpConstants.version3);
-    target.setSecurityLevel(resolveSecurityLevel(securityLevel));
-    target.setSecurityName(new OctetString(username));
-    return target;
-  }
-
-  private PDU buildPdu(List<Source> sources) {
-    ScopedPDU pdu = new ScopedPDU();
-    pdu.setType(PDU.GET);
-    sources.forEach(source -> pdu.add(new VariableBinding(new OID(source.address()))));
-    return pdu;
-  }
-
-  private int resolveSecurityLevel(String level) {
-    return switch (level.toUpperCase()) {
-      case "AUTHNOPRIV" -> SecurityLevel.AUTH_NOPRIV;
-      case "AUTHPRIV"   -> SecurityLevel.AUTH_PRIV;
-      default           -> SecurityLevel.NOAUTH_NOPRIV;
-    };
   }
 }
