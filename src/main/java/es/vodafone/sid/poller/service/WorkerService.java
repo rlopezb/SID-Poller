@@ -27,6 +27,7 @@ public class WorkerService {
     this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));
   }
 
+  // This method creates a custom thread factory that generates virtual threads and sets an uncaught exception handler for logging errors
   private static ThreadFactory createThreadFactory(String name) {
     return new ThreadFactory() {
       private final AtomicInteger count = new AtomicInteger(0);
@@ -42,6 +43,7 @@ public class WorkerService {
     };
   }
 
+  // This method executes a list of workers concurrently, collects their metrics, and handles any exceptions or timeouts that may occur during execution
   public List<Metric> get(List<Worker> workers) {
     List<Future<List<Metric>>> futures = null;
     List<Metric> workersMetrics = new ArrayList<>();
@@ -72,10 +74,12 @@ public class WorkerService {
             future.cancel(true);
             log.error("{} worker failed", name, e.getCause());
             workersMetrics.addAll(nullMetrics(worker, now));
+            Thread.currentThread().interrupt();
           } catch (TimeoutException e) {
             future.cancel(true);
-            log.info("{} worker timeout after {} ms", name, workerTimeout);
+            log.error("{} worker timeout after {} ms", name, workerTimeout);
             workersMetrics.addAll(nullMetrics(worker, now));
+            Thread.currentThread().interrupt();
           }
         }
       }
@@ -88,14 +92,14 @@ public class WorkerService {
     return workersMetrics;
   }
 
-  // Builds a nullMetric per source so a cancelled/failed worker doesn't reduce the
-  // total metric count below the total source count handed to this WorkerService.
+  // This method generates a list of null metrics for a given worker and instant
   private List<Metric> nullMetrics(Worker worker, OffsetDateTime instant) {
     return worker.getSources().stream()
         .map(source -> BaseSourceType.nullMetric(source, instant))
         .toList();
   }
 
+  // This method shuts down the executor service gracefully, waiting for tasks to complete before forcing shutdown if necessary
   public void shutdown() {
     log.info("Shutting down {} WorkersService executor", name);
     executor.shutdown();
