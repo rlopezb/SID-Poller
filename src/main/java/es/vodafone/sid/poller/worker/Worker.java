@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 public interface Worker extends Callable<List<Metric>> {
+  List<Source> getSources();
   default List<Metric> buildMetrics(List<Source> sources, Map<Short, Metric> metricMap, OffsetDateTime instant) {
     List<Metric> metrics = new ArrayList<>();
     for (Source source : sources) {

@@ -31,6 +31,11 @@ public class SshWorker implements Worker {
   private final SourceTypeRegistry sourceTypeRegistry;
 
   @Override
+  public List<Source> getSources() {
+    return sources;
+  }
+
+  @Override
   public List<Metric> call() {
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     Map<Short, Metric> metricsMap = new HashMap<>();

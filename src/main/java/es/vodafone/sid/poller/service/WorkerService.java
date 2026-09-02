@@ -1,12 +1,16 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.Metric;
+import es.vodafone.sid.poller.strategy.BaseSourceType;
 import es.vodafone.sid.poller.worker.Worker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,38 +44,56 @@ public class WorkerService {
 
   public List<Metric> get(List<Worker> workers) {
     List<Future<List<Metric>>> futures = null;
+    List<Metric> workersMetrics = new ArrayList<>();
+    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     try {
       futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       log.error("{} executor interrupted", name);
       Thread.currentThread().interrupt();
     }
-    List<Metric> workersMetrics = new ArrayList<>();
     if (futures != null) {
-      for (Future<List<Metric>> future : futures) {
+      for (int i = 0; i < futures.size(); i++) {
+        Future<List<Metric>> future = futures.get(i);
+        Worker worker = workers.get(i);
         if (future.isCancelled()) {
           log.info("{} worker was cancelled", name);
+          workersMetrics.addAll(nullMetrics(worker, now));
         } else {
           try {
             List<Metric> workerMetrics = future.get(workerTimeout, TimeUnit.MILLISECONDS);
-            if (workerMetrics != null) workersMetrics.addAll(workerMetrics);
+            workersMetrics.addAll(Objects.requireNonNullElseGet(workerMetrics, () -> nullMetrics(worker, now)));
           } catch (InterruptedException e) {
             future.cancel(true);
             log.error("{} worker interrupted", name);
+            workersMetrics.addAll(nullMetrics(worker, now));
             Thread.currentThread().interrupt();
           } catch (ExecutionException e) {
             future.cancel(true);
             log.error("{} worker failed", name, e.getCause());
+            workersMetrics.addAll(nullMetrics(worker, now));
           } catch (TimeoutException e) {
             future.cancel(true);
             log.info("{} worker timeout after {} ms", name, workerTimeout);
+            workersMetrics.addAll(nullMetrics(worker, now));
           }
         }
       }
     } else {
       log.warn("{} no workers were executed", name);
+      for (Worker worker : workers) {
+        workersMetrics.addAll(nullMetrics(worker, now));
+      }
     }
     return workersMetrics;
+  }
+
+  // Builds a nullMetric per source so a cancelled/failed worker doesn't reduce the
+  // total metric count below the total source count handed to this WorkerService.
+  private List<Metric> nullMetrics(Worker worker, OffsetDateTime instant) {
+    return worker.getSources().stream()
+        .map(source -> BaseSourceType.nullMetric(source, instant))
+        .toList();
   }
 
   public void shutdown() {
