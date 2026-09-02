@@ -74,12 +74,10 @@ public class WorkerService {
             future.cancel(true);
             log.error("{} worker failed", name, e.getCause());
             workersMetrics.addAll(nullMetrics(worker, now));
-            Thread.currentThread().interrupt();
           } catch (TimeoutException e) {
             future.cancel(true);
             log.error("{} worker timeout after {} ms", name, workerTimeout);
             workersMetrics.addAll(nullMetrics(worker, now));
-            Thread.currentThread().interrupt();
           }
         }
       }
