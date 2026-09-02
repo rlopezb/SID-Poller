@@ -29,9 +29,7 @@ public class WorkerService {
 
       @Override
       public Thread newThread(@NonNull Runnable runnable) {
-        Thread thread = Thread.ofVirtual()
-            .name(name + "-worker-" + count.incrementAndGet())
-            .unstarted(runnable);
+        Thread thread = Thread.ofVirtual().name(name + "-worker-" + count.incrementAndGet()).unstarted(runnable);
         thread.setUncaughtExceptionHandler((t, e) ->
             log.error("Uncaught exception in thread {}: {}", t.getName(), e.getMessage(), e)
         );
