@@ -7,5 +7,5 @@ import java.time.OffsetDateTime;
 import java.util.List;
 
 public interface SourceType {
-    List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant);
+    List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant);
 }

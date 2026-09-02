@@ -90,7 +90,7 @@ public class SnmpWorker implements Worker {
         }
 
         try {
-          List<Metric> parsed = sourceTypeRegistry.get(source.type()).apply(variable.toString(), List.of(source), now);
+          List<Metric> parsed = sourceTypeRegistry.get(source.type()).calculate(variable.toString(), List.of(source), now);
           if (parsed != null) {
             parsed.forEach(metric -> metricMap.put(metric.srcId(), metric));
           }

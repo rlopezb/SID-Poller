@@ -47,7 +47,7 @@ public class SshWorker implements Worker {
           .getSession()) {
         session.addPasswordIdentity(password);
         session.auth().verify(connectTimeout, TimeUnit.MILLISECONDS);
-
+        // Single sources
         for (Source source : sources) {
           if (source.isMulti()) {
             continue;
@@ -55,35 +55,38 @@ public class SshWorker implements Worker {
           Metric metric = BaseSourceType.nullMetric(source, now);
           String rawValue = executeCommand(session, source.address());
           try {
-            List<Metric> metrics = sourceTypeRegistry.get(source.type()).apply(rawValue, List.of(source), now);
-            if (metrics != null && !metrics.isEmpty() && metrics.getFirst() != null) {
+            List<Metric> metrics = sourceTypeRegistry.get(source.type()).calculate(rawValue, List.of(source), now);
+            if (metrics != null && !metrics.isEmpty() && metrics.getFirst() != null && metrics.size() == 1) {
               metric = metrics.getFirst();
+            } else {
+              log.warn("Sigle source {} returned wrong metric", source.name());
             }
           } catch (RuntimeException e) {
             log.warn("Could not measure source {}", source.name(), e);
           }
           metricsMap.put(source.id(), metric);
         }
+
+        // Multi sources
         Map<String, List<Source>> multiSources = new HashMap<>();
         for (Source source : sources) {
           if (source.isMulti() && source.address() != null) {
             multiSources.computeIfAbsent(source.address(), _ -> new ArrayList<>()).add(source);
           }
         }
-
-        for (Map.Entry<String, List<Source>> entry : multiSources.entrySet()) {
-          String address = entry.getKey();
-          List<Source> groupedSources = entry.getValue();
+        for (Map.Entry<String, List<Source>> multiSource : multiSources.entrySet()) {
+          String address = multiSource.getKey();
+          List<Source> groupedSources = multiSource.getValue();
           try {
             String rawValue = executeCommand(session, address);
             List<Metric> multiMetrics = rawValue == null
                 ? List.of()
-                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti()).apply(rawValue, groupedSources, now);
+                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti()).calculate(rawValue, groupedSources, now);
             if (multiMetrics != null) {
               multiMetrics.forEach(metric -> metricsMap.put(metric.srcId(), metric));
             }
           } catch (RuntimeException e) {
-            log.warn("Could not measure multi-source command '{}' on {}", entry.getKey(), element.name(), e);
+            log.warn("Could not measure multi-source command '{}' on {}", multiSource.getKey(), element.name(), e);
           }
         }
       }

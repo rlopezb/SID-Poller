@@ -11,7 +11,7 @@ import java.util.List;
 public class DirectSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
         Source source = sources.getFirst();
         try {
             return List.of(metric(source, instant, parse(rawValue)));

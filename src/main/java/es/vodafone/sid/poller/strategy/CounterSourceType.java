@@ -18,7 +18,7 @@ public class CounterSourceType extends BaseSourceType {
     private final BigInteger wrapModulus;
 
     @Override
-    public List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
         Source source = sources.getFirst();
         BigInteger current = new BigInteger(rawValue.trim());
 

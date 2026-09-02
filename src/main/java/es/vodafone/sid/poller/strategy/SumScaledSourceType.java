@@ -14,7 +14,7 @@ import java.util.List;
 public class SumScaledSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
         Source sourcesFirst = sources.getFirst();
         try {
             BigDecimal sum = Arrays.stream(rawValue.split("\\n"))

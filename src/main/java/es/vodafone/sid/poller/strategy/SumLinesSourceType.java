@@ -13,7 +13,7 @@ import java.util.List;
 public class SumLinesSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> apply(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
         Source source = sources.getFirst();
         try {
             BigInteger sum = Arrays.stream(rawValue.split("\\n"))
