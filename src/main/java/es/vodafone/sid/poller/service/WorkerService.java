@@ -17,14 +17,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 // This service is responsible for executing a list of workers concurrently and collecting their results.
 @Slf4j
 public class WorkerService {
-  private final ExecutorService executor;
   private final String name;
   private final long workerTimeout;
 
   public WorkerService(long workerTimeout, String name) {
     this.workerTimeout = workerTimeout;
     this.name = name;
-    this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));
   }
 
   // This method creates a custom thread factory that generates virtual threads
@@ -50,7 +48,7 @@ public class WorkerService {
     List<Future<List<Metric>>> futures = null;
     List<Metric> workersMetrics = new ArrayList<>();
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-    try {
+    try (ExecutorService executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name))) {
       futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       log.error("{} executor interrupted", name);
@@ -97,21 +95,5 @@ public class WorkerService {
     return worker.getSources().stream()
         .map(source -> BaseSourceType.nullMetric(source, instant))
         .toList();
-  }
-
-  // This method shuts down the executor service gracefully, waiting for tasks to complete
-  // before forcing shutdown if necessary
-  public void shutdown() {
-    log.info("Shutting down {} WorkerService executor", name);
-    executor.shutdown();
-    try {
-      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-        log.warn("{} executor did not terminate, forcing shutdown", name);
-        executor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      executor.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
   }
 }

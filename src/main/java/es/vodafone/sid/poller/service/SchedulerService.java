@@ -80,7 +80,6 @@ public class SchedulerService implements SchedulingConfigurer {
 
   @PreDestroy
   public void shutdown() {
-    aggregatorServices.forEach(AggregatorService::shutdown);
     workerServices.forEach(WorkerService::shutdown);
     finderServices.forEach(FinderService::shutdown);
     walkerServices.forEach(WalkerService::shutdown);
