@@ -36,7 +36,6 @@ public class SchedulerService implements SchedulingConfigurer {
 
   @Value("${sid.poller.scheduler.pool.size}")
   private int poolSize;
-
   private final Semaphore executionSlots = new Semaphore(poolSize);
 
   @Override
