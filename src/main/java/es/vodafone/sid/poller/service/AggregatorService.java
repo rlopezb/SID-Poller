@@ -25,11 +25,12 @@ public class AggregatorService {
 
   public void aggregate() {
     Future<List<Metric>> future = null;
-    try (ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
+    ExecutorService executor = Executors.newSingleThreadExecutor(runnable -> {
       Thread thread = new Thread(runnable, "AggregatorService-" + collector.name());
       thread.setDaemon(true);
       return thread;
-    })) {
+    });
+    try {
       future = executor.submit(aggregator);
       List<Metric> metrics = future.get(collector.collectorTimeout(), TimeUnit.MILLISECONDS);
       if (metrics != null) {
@@ -44,6 +45,8 @@ public class AggregatorService {
     } catch (ExecutionException | TimeoutException e) {
       future.cancel(true);
       log.error("{} aggregator falló o superó el timeout de esta ejecución", collector.name(), e);
+    } finally {
+      executor.shutdownNow();
     }
   }
 }
