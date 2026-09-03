@@ -44,7 +44,7 @@ public class WorkerService {
 
   // This method executes a list of workers concurrently, collects their metrics,
   // and handles any exceptions or timeouts that may occur during execution
-  public List<Metric> get(List<Worker> workers) {
+  public List<Metric> run(List<Worker> workers) {
     List<Metric> workersMetrics = new ArrayList<>();
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     try (ExecutorService executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name))) {

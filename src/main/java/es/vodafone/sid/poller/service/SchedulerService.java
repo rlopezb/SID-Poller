@@ -21,11 +21,12 @@ import org.springframework.stereotype.Service;
 // This service is responsible for scheduling the execution of collectors and discoverers based on their cron expressions.
 public class SchedulerService implements SchedulingConfigurer {
 
-  private final AggregatorFactory aggregatorFactory;
-  private final FinderFactory finderFactory;
-  private final MetricRepository metricRepository;
   private final CollectorRepository collectorRepository;
+  private final AggregatorFactory aggregatorFactory;
+  private final MetricRepository metricRepository;
+
   private final DiscovererRepository discovererRepository;
+  private final FinderFactory finderFactory;
   private final SourceRepository sourceRepository;
 
   @Override

@@ -50,7 +50,7 @@ public class AggregatorFactory {
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
     }
-    return workerService.get(workers);
+    return workerService.run(workers);
   }
 
   private List<Metric> collectSnmp(Collector collector, WorkerService workerService) {
@@ -69,7 +69,7 @@ public class AggregatorFactory {
         workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
       }
     }
-    return workerService.get(workers);
+    return workerService.run(workers);
   }
 
   private static Collection<List<Source>> groupByElement(List<Source> sources) {
