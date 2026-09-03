@@ -17,6 +17,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
@@ -36,12 +37,25 @@ public class SchedulerService implements SchedulingConfigurer {
   @Value("${sid.poller.scheduler.pool.size}")
   private int poolSize;
 
+  private final Semaphore executionSlots = new Semaphore(poolSize);
+
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
     ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
     scheduler.setPoolSize(poolSize);
     scheduler.setThreadNamePrefix("PollerScheduler-");
     scheduler.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    scheduler.setTaskDecorator(runnable -> () -> {
+      if (!executionSlots.tryAcquire()) {
+        log.error("PollerScheduler saturado: no hay hilo libre, se descarta esta ejecución");
+        return;
+      }
+      try {
+        runnable.run();
+      } finally {
+        executionSlots.release();
+      }
+    });
     scheduler.initialize();
     registrar.setTaskScheduler(scheduler);
 
