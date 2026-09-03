@@ -45,16 +45,10 @@ public class WorkerService {
   // This method executes a list of workers concurrently, collects their metrics,
   // and handles any exceptions or timeouts that may occur during execution
   public List<Metric> get(List<Worker> workers) {
-    List<Future<List<Metric>>> futures = null;
     List<Metric> workersMetrics = new ArrayList<>();
     OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
     try (ExecutorService executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name))) {
-      futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
-    } catch (InterruptedException e) {
-      log.error("{} executor interrupted", name);
-      Thread.currentThread().interrupt();
-    }
-    if (futures != null) {
+      List<Future<List<Metric>>> futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
       for (int i = 0; i < futures.size(); i++) {
         Future<List<Metric>> future = futures.get(i);
         Worker worker = workers.get(i);
@@ -81,11 +75,9 @@ public class WorkerService {
           }
         }
       }
-    } else {
-      log.warn("{} no workers were executed", name);
-      for (Worker worker : workers) {
-        workersMetrics.addAll(nullMetrics(worker, now));
-      }
+    } catch (InterruptedException e) {
+      log.error("{} executor interrupted", name);
+      Thread.currentThread().interrupt();
     }
     return workersMetrics;
   }
