@@ -11,6 +11,7 @@ import es.vodafone.sid.poller.repository.SourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
@@ -32,10 +33,13 @@ public class SchedulerService implements SchedulingConfigurer {
   private final FinderFactory finderFactory;
   private final SourceRepository sourceRepository;
 
+  @Value("${sid.poller.scheduler.pool.size}")
+  private int poolSize;
+
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
     ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-    scheduler.setPoolSize(5);
+    scheduler.setPoolSize(poolSize);
     scheduler.setThreadNamePrefix("PollerScheduler-");
     scheduler.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
     scheduler.initialize();

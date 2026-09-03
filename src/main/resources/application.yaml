@@ -12,6 +12,11 @@ spring:
       idle-timeout: 30000
       connection-timeout: 20000
       pool-name: SIDHikariPool
+sid:
+  poller:
+    scheduler:
+      pool:
+        size: 10
 logging:
   level:
     es:
