@@ -102,22 +102,4 @@ public class FinderService {
       }
     }
   }
-
-  public String getCron() {
-    return discoverer.cron();
-  }
-
-  public void shutdown() {
-    log.info("Shutting down {} FinderService executor", discoverer.name());
-    executor.shutdown();
-    try {
-      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-        log.warn("{} executor did not terminate, forcing shutdown", discoverer.name());
-        executor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      executor.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
-  }
 }
