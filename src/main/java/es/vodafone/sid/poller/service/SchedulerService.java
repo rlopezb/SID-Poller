@@ -12,8 +12,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
 @Service
@@ -31,6 +34,13 @@ public class SchedulerService implements SchedulingConfigurer {
 
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
+    ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+    scheduler.setPoolSize(5);
+    scheduler.setThreadNamePrefix("PollerScheduler-");
+    scheduler.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+    scheduler.initialize();
+    registrar.setTaskScheduler(scheduler);
+
     for (Collector collector : collectorRepository.findAll()) {
       WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
       Aggregator aggregator = aggregatorFactory.create(collector, workerService);
