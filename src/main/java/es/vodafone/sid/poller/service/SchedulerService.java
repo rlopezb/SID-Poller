@@ -8,16 +8,12 @@ import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.DiscovererRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -31,8 +27,6 @@ public class SchedulerService implements SchedulingConfigurer {
   private final CollectorRepository collectorRepository;
   private final DiscovererRepository discovererRepository;
   private final SourceRepository sourceRepository;
-
-  private final List<WalkerService> walkerServices = new ArrayList<>();
 
   @Override
   public void configureTasks(@NonNull ScheduledTaskRegistrar registrar) {
