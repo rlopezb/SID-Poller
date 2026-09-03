@@ -61,7 +61,7 @@ public class SchedulerService implements SchedulingConfigurer {
   }
 
   private AggregatorService createAggregatorService(Collector collector) {
-    // Create a new WorkersService for the collector and add it to the list of workersServices
+    // Create a new WorkerService for the collector and add it to the list of WorkerServices
     WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
     workerServices.add(workerService);
     // Create a new Aggregator for the AggregatorService using the aggregatorFactory and the collector

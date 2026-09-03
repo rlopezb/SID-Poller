@@ -27,7 +27,8 @@ public class WorkerService {
     this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));
   }
 
-  // This method creates a custom thread factory that generates virtual threads and sets an uncaught exception handler for logging errors
+  // This method creates a custom thread factory that generates virtual threads
+  // and sets an uncaught exception handler for logging errors
   private static ThreadFactory createThreadFactory(String name) {
     return new ThreadFactory() {
       private final AtomicInteger count = new AtomicInteger(0);
@@ -43,7 +44,8 @@ public class WorkerService {
     };
   }
 
-  // This method executes a list of workers concurrently, collects their metrics, and handles any exceptions or timeouts that may occur during execution
+  // This method executes a list of workers concurrently, collects their metrics,
+  // and handles any exceptions or timeouts that may occur during execution
   public List<Metric> get(List<Worker> workers) {
     List<Future<List<Metric>>> futures = null;
     List<Metric> workersMetrics = new ArrayList<>();
@@ -97,9 +99,10 @@ public class WorkerService {
         .toList();
   }
 
-  // This method shuts down the executor service gracefully, waiting for tasks to complete before forcing shutdown if necessary
+  // This method shuts down the executor service gracefully, waiting for tasks to complete
+  // before forcing shutdown if necessary
   public void shutdown() {
-    log.info("Shutting down {} WorkersService executor", name);
+    log.info("Shutting down {} WorkerService executor", name);
     executor.shutdown();
     try {
       if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
