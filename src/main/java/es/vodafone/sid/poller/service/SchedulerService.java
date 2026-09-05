@@ -66,7 +66,7 @@ public class SchedulerService implements SchedulingConfigurer {
     }
 
     for (Discoverer discoverer : discovererRepository.findAll()) {
-      WalkerService walkerService = new WalkerService(discoverer.workerTimeout(), discoverer.name());
+      WalkerService walkerService = new WalkerService(discoverer.discovererTimeout(), discoverer.name());
       Finder finder = finderFactory.create(discoverer, walkerService);
       FinderService finderService = new FinderService(finder, discoverer, sourceRepository);
       registrar.addCronTask(finderService::find, discoverer.cron());
