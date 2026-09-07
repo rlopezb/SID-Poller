@@ -5,8 +5,6 @@ import es.vodafone.sid.poller.model.Source;
 
 import java.math.BigInteger;
 import java.time.OffsetDateTime;
-import java.util.List;
-
 public abstract class BaseSourceType implements SourceType {
 
     protected static Metric metric(Source source, OffsetDateTime instant, BigInteger value) {
