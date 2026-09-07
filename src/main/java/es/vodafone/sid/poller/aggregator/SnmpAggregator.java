@@ -40,19 +40,14 @@ public class SnmpAggregator extends Aggregator {
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
       int maxOid = protocol.config().get("maxOid").asInt();
       if (maxOid == 0) maxOid = group.size();
-      for (List<Source> chunk : partition(group, maxOid)) {
+      List<List<Source>> partitions = new ArrayList<>();
+      for (int i = 0; i < group.size(); i += maxOid) {
+        partitions.add(group.subList(i, Math.min(i + maxOid, group.size())));
+      }
+      for (List<Source> chunk : partitions) {
         workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
       }
     }
     return workerService.run(workers);
   }
-
-  private static <T> List<List<T>> partition(List<T> list, int size) {
-    List<List<T>> partitions = new ArrayList<>();
-    for (int i = 0; i < list.size(); i += size) {
-      partitions.add(list.subList(i, Math.min(i + size, list.size())));
-    }
-    return partitions;
-  }
-
 }
