@@ -26,21 +26,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class SnmpWalker implements Walker {
-
-  private final short discovererId;
-  private final Element element;
-  private final List<Rule> rules;
-  private final Protocol protocol;
+public class SnmpWalker extends Walker {
   private final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
 
   public SnmpWalker(short discovererId, Element element, List<Rule> rules,
                     Protocol protocol, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry) {
-    this.discovererId = discovererId;
-    this.element = element;
-    this.rules = rules;
-    this.protocol = protocol;
+    super(discovererId, element, rules, protocol);
     this.snmp = snmp;
     this.snmpUserRegistry = snmpUserRegistry;
   }

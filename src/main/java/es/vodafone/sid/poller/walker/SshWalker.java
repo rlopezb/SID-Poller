@@ -22,20 +22,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
-public class SshWalker implements Walker {
-
-  private final short discovererId;
-  private final Element element;
-  private final List<Rule> rules;
-  private final Protocol protocol;
+public class SshWalker extends Walker {
   private final SshClient sshClient;
 
   public SshWalker(short discovererId, Element element, List<Rule> rules,
                    Protocol protocol, SshClient sshClient) {
-    this.discovererId = discovererId;
-    this.element = element;
-    this.rules = rules;
-    this.protocol = protocol;
+    super(discovererId, element, rules, protocol);
     this.sshClient = sshClient;
   }
 

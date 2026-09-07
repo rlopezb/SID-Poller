@@ -22,17 +22,12 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@RequiredArgsConstructor
-public class SshWorker implements Worker {
-  private final Element element;
-  private final List<Source> sources;
-  private final Protocol protocol;
+public class SshWorker extends Worker {
   private final SshClient sshClient;
-  private final SourceTypeRegistry sourceTypeRegistry;
 
-  @Override
-  public List<Source> getSources() {
-    return sources;
+  public SshWorker(Element element, List<Source> sources, Protocol protocol, SourceTypeRegistry sourceTypeRegistry, SshClient sshClient) {
+    super(element, sources, protocol, sourceTypeRegistry);
+    this.sshClient = sshClient;
   }
 
   @Override

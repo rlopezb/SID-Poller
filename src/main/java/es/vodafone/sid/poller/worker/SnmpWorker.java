@@ -26,18 +26,14 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 @Slf4j
-@RequiredArgsConstructor
-public class SnmpWorker implements Worker {
-  private final Element element;
-  private final List<Source> sources;
-  private final Protocol protocol;
+public class SnmpWorker extends Worker {
   private final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
-  private final SourceTypeRegistry sourceTypeRegistry;
 
-  @Override
-  public List<Source> getSources() {
-    return sources;
+  public SnmpWorker(Element element, List<Source> sources, Protocol protocol, SourceTypeRegistry sourceTypeRegistry, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry) {
+    super(element, sources, protocol, sourceTypeRegistry);
+    this.snmp = snmp;
+    this.snmpUserRegistry = snmpUserRegistry;
   }
 
   @Override

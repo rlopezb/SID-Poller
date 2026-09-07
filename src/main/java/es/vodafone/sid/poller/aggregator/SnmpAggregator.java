@@ -45,7 +45,7 @@ public class SnmpAggregator extends Aggregator {
         partitions.add(group.subList(i, Math.min(i + maxOid, group.size())));
       }
       for (List<Source> chunk : partitions) {
-        workers.add(new SnmpWorker(element, chunk, protocol, snmp, snmpUserRegistry, sourceTypeRegistry));
+        workers.add(new SnmpWorker(element, chunk, protocol, sourceTypeRegistry, snmp, snmpUserRegistry));
       }
     }
     return workerService.run(workers);

@@ -40,7 +40,7 @@ public class SshAggregator extends Aggregator {
       short elementTypeId = element.elementTypeId();
       Protocol protocol = protocolCache.computeIfAbsent(elementTypeId,
           id -> protocolRepository.getByProtocolAndElementTypeId(collector.protocol(), id));
-      workers.add(new SshWorker(element, group, protocol, sshClient, sourceTypeRegistry));
+      workers.add(new SshWorker(element, group, protocol, sourceTypeRegistry, sshClient));
     }
     return workerService.run(workers);
   }
