@@ -51,7 +51,7 @@ public class FinderFactory {
 
       walkers.add(new SshWalker(discoverer.id(), element, rules, protocol, sshClient));
     }
-    return walkerService.get(walkers);
+    return walkerService.run(walkers);
   }
 
   private List<Source> walkSnmp(Discoverer discoverer, WalkerService walkerService) {
@@ -69,6 +69,6 @@ public class FinderFactory {
 
       walkers.add(new SnmpWalker(discoverer.id(), element, rules, protocol, snmp, snmpUserRegistry));
     }
-    return walkerService.get(walkers);
+    return walkerService.run(walkers);
   }
 }

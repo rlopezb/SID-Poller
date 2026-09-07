@@ -10,28 +10,26 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+// This service is responsible for executing a list of Walker tasks concurrently and collecting their discovered sources.
 @Slf4j
-// This service is responsible for executing a list of Walker tasks concurrently with a specified timeout.
 public class WalkerService {
-  private final ExecutorService executor;
   private final String name;
   private final long walkerTimeout;
 
   public WalkerService(long walkerTimeout, String name) {
     this.walkerTimeout = walkerTimeout;
     this.name = name;
-    this.executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name));
   }
 
-  private static ThreadFactory createThreadFactory(String poolName) {
+  // This method creates a custom thread factory that generates virtual threads
+  // and sets an uncaught exception handler for logging errors
+  private static ThreadFactory createThreadFactory(String name) {
     return new ThreadFactory() {
       private final AtomicInteger count = new AtomicInteger(0);
 
       @Override
       public Thread newThread(@NonNull Runnable runnable) {
-        Thread thread = Thread.ofVirtual()
-            .name(poolName + "-walker-" + count.incrementAndGet())
-            .unstarted(runnable);
+        Thread thread = Thread.ofVirtual().name(name + "-walker-" + count.incrementAndGet()).unstarted(runnable);
         thread.setUncaughtExceptionHandler((t, e) ->
             log.error("Uncaught exception in thread {}: {}", t.getName(), e.getMessage(), e)
         );
@@ -40,40 +38,36 @@ public class WalkerService {
     };
   }
 
-  public List<Source> get(List<Walker> walkers) {
+  // This method executes a list of walkers concurrently, collects their discovered sources,
+  // and handles any exceptions or timeouts that may occur during execution
+  public List<Source> run(List<Walker> walkers) {
     List<Source> discovered = new ArrayList<>();
-    try {
+    try (ExecutorService executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name))) {
       List<Future<List<Source>>> futures = executor.invokeAll(walkers, walkerTimeout, TimeUnit.MILLISECONDS);
       for (Future<List<Source>> future : futures) {
         if (future.isCancelled()) {
           log.info("{} walker was cancelled", name);
         } else {
           try {
-            List<Source> sources = future.get();
+            List<Source> sources = future.get(walkerTimeout, TimeUnit.MILLISECONDS);
             if (sources != null) discovered.addAll(sources);
+          } catch (InterruptedException e) {
+            future.cancel(true);
+            log.error("{} walker interrupted", name);
+            Thread.currentThread().interrupt();
           } catch (ExecutionException e) {
+            future.cancel(true);
             log.error("{} walker failed", name, e.getCause());
+          } catch (TimeoutException e) {
+            future.cancel(true);
+            log.error("{} walker timeout after {} ms", name, walkerTimeout);
           }
         }
       }
     } catch (InterruptedException e) {
-      log.error("{} walker executor interrupted", name);
+      log.error("{} executor interrupted", name);
       Thread.currentThread().interrupt();
     }
     return discovered;
-  }
-
-  public void shutdown() {
-    log.info("Shutting down {} WalkerService executor", name);
-    executor.shutdown();
-    try {
-      if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-        log.warn("{} executor did not terminate, forcing shutdown", name);
-        executor.shutdownNow();
-      }
-    } catch (InterruptedException e) {
-      executor.shutdownNow();
-      Thread.currentThread().interrupt();
-    }
   }
 }
