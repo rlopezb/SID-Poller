@@ -17,13 +17,13 @@ public class ProtocolRepository {
     JsonNode config = OBJECT_MAPPER.readTree(rs.getString("config"));
 
     return new Protocol(
-        rs.getShort("element_type_id"),
-        rs.getString("protocol"),
+        rs.getObject("element_type_id", Short.class),
+        rs.getObject("protocol", String.class),
         config
     );
   };
 
-  public Protocol getByProtocolAndElementTypeId(String protocol, short elementTypeId) {
+  public Protocol getByProtocolAndElementTypeId(String protocol, Short elementTypeId) {
     return jdbcTemplate.queryForObject(
         "select * from protocol where protocol = ? and element_type_id = ?", ROW_MAPPER, protocol, elementTypeId
     );

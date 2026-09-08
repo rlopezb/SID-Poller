@@ -1,13 +1,13 @@
 package es.vodafone.sid.poller.model;
 
 public record Element(
-    short id,
+    Short id,
     String name,
-    short elementTypeId,
-    short siteId,
-    short cdcId,
-    short zoneId,
-    short archId,
-    short netId
+    Short elementTypeId,
+    Short siteId,
+    Short cdcId,
+    Short zoneId,
+    Short archId,
+    Short netId
 ) {
 }

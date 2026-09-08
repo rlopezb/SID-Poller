@@ -3,32 +3,32 @@ package es.vodafone.sid.poller.model;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Objects;
 
 public record Source(
-    short id,
+    Short id,
     String name,
     String description,
-    short type,
-    short elementId,
-    short elementTypeId,
-    short siteId,
-    short cdcId,
-    short zoneId,
-    short netId,
-    short archId,
-    short groupId,
-    short serviceId,
-    short serviceTypeId,
-    short collectorId,
-    short discovererId,
+    Short type,
+    Short elementId,
+    Short elementTypeId,
+    Short siteId,
+    Short cdcId,
+    Short zoneId,
+    Short netId,
+    Short archId,
+    Short groupId,
+    Short serviceId,
+    Short serviceTypeId,
+    Short collectorId,
+    Short discovererId,
     String address,
     String capture,
-    OffsetDateTime instant,
+    Instant instant,
     BigInteger cache,
-    double scale,
-    boolean active
+    Integer scale,
+    Boolean active
 ) {
   public boolean isMulti() {
     return type == SourceTypeRegistry.getMulti();
@@ -37,21 +37,21 @@ public record Source(
   public boolean isSame(Source other) {
     return this.name().equals(other.name())
         && Objects.equals(this.description(), other.description())
-        && this.type() == other.type()
-        && this.elementId() == other.elementId()
-        && this.elementTypeId() == other.elementTypeId()
-        && this.siteId() == other.siteId()
-        && this.cdcId() == other.cdcId()
-        && this.zoneId() == other.zoneId()
-        && this.netId() == other.netId()
-        && this.archId() == other.archId()
-        && this.groupId() == other.groupId()
-        && this.serviceId() == other.serviceId()
-        && this.serviceTypeId() == other.serviceTypeId()
-        && this.collectorId() == other.collectorId()
-        && this.discovererId() == other.discovererId()
-        && this.address().equals(other.address())
+        && Objects.equals(this.type(), other.type())
+        && Objects.equals(this.elementId(), other.elementId())
+        && Objects.equals(this.elementTypeId(), other.elementTypeId())
+        && Objects.equals(this.siteId(), other.siteId())
+        && Objects.equals(this.cdcId(), other.cdcId())
+        && Objects.equals(this.zoneId(), other.zoneId())
+        && Objects.equals(this.netId(), other.netId())
+        && Objects.equals(this.archId(), other.archId())
+        && Objects.equals(this.groupId(), other.groupId())
+        && Objects.equals(this.serviceId(), other.serviceId())
+        && Objects.equals(this.serviceTypeId(), other.serviceTypeId())
+        && Objects.equals(this.collectorId(), other.collectorId())
+        && Objects.equals(this.discovererId(), other.discovererId())
+        && Objects.equals(this.address(),other.address())
         && Objects.equals(this.capture(), other.capture())
-        && this.scale() == other.scale();
+        && Objects.equals(this.scale(), other.scale());
   }
 }

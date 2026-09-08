@@ -9,7 +9,8 @@ import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ public abstract class Worker implements Callable<List<Metric>> {
   public final Protocol protocol;
   public final SourceTypeRegistry sourceTypeRegistry;
 
-  public List<Metric> buildMetrics(List<Source> sources, Map<Short, Metric> metricMap, OffsetDateTime instant) {
+  public List<Metric> buildMetrics(List<Source> sources, Map<Short, Metric> metricMap, Instant instant) {
     List<Metric> metrics = new ArrayList<>();
     for (Source source : sources) {
       metrics.add(metricMap.getOrDefault(source.id(), BaseSourceType.nullMetric(source, instant)));

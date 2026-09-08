@@ -4,14 +4,14 @@ import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
 public class DirectSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
         Source source = sources.getFirst();
         try {
             return List.of(metric(source, instant, parse(rawValue)));

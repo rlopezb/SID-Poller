@@ -14,12 +14,12 @@ public class DiscovererRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<Discoverer> ROW_MAPPER = (rs, _) -> new Discoverer(
-      rs.getShort("id"),
-      rs.getString("name"),
-      rs.getString("protocol"),
-      rs.getString("cron"),
-      rs.getInt("discoverer_timeout"),
-      rs.getInt("walker_timeout")
+      rs.getObject("id", Short.class),
+      rs.getObject("name", String.class),
+      rs.getObject("protocol", String.class),
+      rs.getObject("cron", String.class),
+      rs.getObject("discoverer_timeout", Integer.class),
+      rs.getObject("walker_timeout", Integer.class)
   );
 
   public List<Discoverer> findAll() {

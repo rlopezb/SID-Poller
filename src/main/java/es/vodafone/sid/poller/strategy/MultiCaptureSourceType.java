@@ -5,7 +5,7 @@ import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class MultiCaptureSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
         List<Metric> metrics = new ArrayList<>();
         for (Source source : sources) {
             Pattern pattern = Pattern.compile(source.capture());

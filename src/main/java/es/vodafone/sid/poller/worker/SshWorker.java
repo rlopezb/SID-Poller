@@ -16,7 +16,7 @@ import org.apache.sshd.client.session.ClientSession;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +32,7 @@ public class SshWorker extends Worker {
 
   @Override
   public List<Metric> call() {
-    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    Instant now = Instant.now();
     Map<Short, Metric> metricsMap = new HashMap<>();
 
     try {

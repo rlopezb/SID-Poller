@@ -1,12 +1,12 @@
 package es.vodafone.sid.poller.model;
 
 public record Collector(
-    short id,
+    Short id,
     String name,
     String protocol,
     String cron,
-    int collectorTimeout,
-    int workerTimeout,
-    short size,
-    short queue) {
+    Integer collectorTimeout,
+    Integer workerTimeout,
+    Short size,
+    Short queue) {
 }

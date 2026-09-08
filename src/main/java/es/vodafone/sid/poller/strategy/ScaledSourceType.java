@@ -6,14 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Slf4j
 public class ScaledSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
         Source source = sources.getFirst();
         try {
             BigInteger scaled = new BigDecimal(rawValue.trim())

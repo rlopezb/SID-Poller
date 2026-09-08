@@ -11,30 +11,31 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MetricRepository {
   private final JdbcTemplate jdbc;
+
   public void insert(List<Metric> metrics) {
     var sql = """
-            INSERT INTO metric (
-                instant, src_id, element_id, element_type_id,
-                site_id, cdc_id, zone_id, net_id, arch_id,
-                group_id, service_id, service_type_id, value
-            ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-              WHERE EXISTS (SELECT 1 FROM source WHERE id = ? AND active = true)
-            """;
+        INSERT INTO metric (
+            instant, src_id, element_id, element_type_id,
+            site_id, cdc_id, zone_id, net_id, arch_id,
+            group_id, service_id, service_type_id, value
+        ) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+          WHERE EXISTS (SELECT 1 FROM source WHERE id = ? AND active = true)
+        """;
     jdbc.batchUpdate(sql, metrics, metrics.size(), (ps, metric) -> {
       ps.setObject(1, metric.instant());
-      ps.setShort(2, metric.srcId());
-      ps.setShort(3, metric.elementId());
-      ps.setShort(4, metric.elementTypeId());
-      ps.setShort(5, metric.siteId());
-      ps.setShort(6, metric.cdcId());
-      ps.setShort(7, metric.zoneId());
-      ps.setShort(8, metric.netId());
-      ps.setShort(9, metric.archId());
-      ps.setShort(10, metric.groupId());
-      ps.setShort(11, metric.serviceId());
-      ps.setShort(12, metric.serviceTypeId());
-      ps.setObject(13, metric.value());
-      ps.setShort(14, metric.srcId());
+      ps.setObject(2, metric.srcId());
+      ps.setObject(3, metric.elementId());
+      ps.setObject(4, metric.elementTypeId());
+      ps.setObject(5, metric.siteId());
+      ps.setObject(6, metric.cdcId());
+      ps.setObject(7, metric.zoneId());
+      ps.setObject(8, metric.netId());
+      ps.setObject(9, metric.archId());
+      ps.setObject(10, metric.groupId());
+      ps.setObject(11, metric.serviceId());
+      ps.setObject(12, metric.serviceTypeId());
+      ps.setObject(13, metric.value() == null ? null : metric.value().longValue());
+      ps.setObject(14, metric.srcId());
     });
   }
 }

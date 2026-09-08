@@ -4,10 +4,11 @@ import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Source;
 
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
+import java.time.Instant;
+
 public abstract class BaseSourceType implements SourceType {
 
-    protected static Metric metric(Source source, OffsetDateTime instant, BigInteger value) {
+    protected static Metric metric(Source source, Instant instant, BigInteger value) {
         return new Metric(
             instant,
             source.id(), source.elementId(), source.elementTypeId(),
@@ -21,7 +22,7 @@ public abstract class BaseSourceType implements SourceType {
         return new BigInteger(rawValue.trim());
     }
 
-    public static Metric nullMetric(Source source, OffsetDateTime instant) {
+    public static Metric nullMetric(Source source, Instant instant) {
         return metric(source, instant, null);
     }
 

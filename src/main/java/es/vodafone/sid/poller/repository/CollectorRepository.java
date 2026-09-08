@@ -14,14 +14,14 @@ public class CollectorRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<Collector> ROW_MAPPER = (rs, _) -> new Collector(
-      rs.getShort("id"),
-      rs.getString("name"),
-      rs.getString("protocol"),
-      rs.getString("cron"),
-      rs.getInt("collector_timeout"),
-      rs.getInt("worker_timeout"),
-      rs.getShort("size"),
-      rs.getShort("queue")
+      rs.getObject("id", Short.class),
+      rs.getObject("name", String.class),
+      rs.getObject("protocol", String.class),
+      rs.getObject("cron", String.class),
+      rs.getObject("collector_timeout", Integer.class),
+      rs.getObject("worker_timeout", Integer.class),
+      rs.getObject("size", Short.class),
+      rs.getObject("queue", Short.class)
   );
 
   public List<Collector> findAll() {

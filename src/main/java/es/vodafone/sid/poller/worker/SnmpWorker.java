@@ -18,7 +18,7 @@ import org.snmp4j.smi.Variable;
 import org.snmp4j.smi.VariableBinding;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +38,7 @@ public class SnmpWorker extends Worker {
 
   @Override
   public List<Metric> call() {
-    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    Instant now = Instant.now();
     Map<Short, Metric> metricMap = new HashMap<>();
 
     try {

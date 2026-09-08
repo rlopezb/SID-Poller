@@ -5,7 +5,7 @@ import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
 public class SumLinesSourceType extends BaseSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
         Source source = sources.getFirst();
         try {
             BigInteger sum = Arrays.stream(rawValue.split("\\n"))

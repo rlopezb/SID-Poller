@@ -1,19 +1,19 @@
 package es.vodafone.sid.poller.model;
 
 public record Rule(
-    short id,
-    short elementTypeId,
+    Short id,
+    Short elementTypeId,
     String discoverer,
-    short collectorId,
-    short netId,
-    short grpId,
-    short serviceId,
-    short serviceTypeId,
-    short type,
-    short srcType,
+    Short collectorId,
+    Short netId,
+    Short grpId,
+    Short serviceId,
+    Short serviceTypeId,
+    Short type,
+    Short srcType,
     String address,
     String pattern,
     String check,
     String name,
-    Short scale
+    Integer scale
 ) {}

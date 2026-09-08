@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigInteger;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -18,9 +18,9 @@ public class CounterSourceType extends BaseSourceType {
     private final BigInteger wrapModulus;
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, OffsetDateTime instant) {
+    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
         Source source = sources.getFirst();
-        BigInteger current = new BigInteger(rawValue.trim());
+        BigInteger current = BigInteger.valueOf(Long.parseLong(rawValue.trim()));
 
         if (source.instant() == null) {
             log.debug("First reading for counter source {}, storing initial value", source.name());
@@ -31,7 +31,7 @@ public class CounterSourceType extends BaseSourceType {
         long seconds = ChronoUnit.SECONDS.between(source.instant(), instant);
         BigInteger delta = current.subtract(source.cache());
 
-        if (delta.compareTo(BigInteger.ZERO) < 0) {
+        if (delta.compareTo(BigInteger.ZERO)< 0) {
             delta = delta.add(wrapModulus);
         }
 

@@ -14,11 +14,11 @@ public class ElementTypeRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<ElementType> ROW_MAPPER = (rs, _) -> new ElementType(
-      rs.getShort("id"),
-      rs.getString("name")
+      rs.getObject("id", Short.class),
+      rs.getObject("name", String.class)
   );
 
-  public ElementType findById(short id) {
+  public ElementType findById(Short id) {
     return jdbcTemplate.queryForObject("select * from element_type where id = ?", ROW_MAPPER, id);
   }
 

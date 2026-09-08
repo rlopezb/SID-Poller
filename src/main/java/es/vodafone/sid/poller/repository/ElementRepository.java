@@ -14,18 +14,17 @@ public class ElementRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<Element> ROW_MAPPER = (rs, _) -> new Element(
-      rs.getShort("id"),
-      rs.getString("name"),
-      rs.getShort("element_type_id"),
-      rs.getShort("site_id"),
-      rs.getShort("cdc_id"),
-      rs.getShort("zone_id"),
-      rs.getShort("arch_id"),
-      rs.getShort("net_id")
-
+      rs.getObject("id", Short.class),
+      rs.getObject("name", String.class),
+      rs.getObject("element_type_id", Short.class),
+      rs.getObject("site_id", Short.class),
+      rs.getObject("cdc_id", Short.class),
+      rs.getObject("zone_id", Short.class),
+      rs.getObject("arch_id", Short.class),
+      rs.getObject("net_id", Short.class)
   );
 
-  public Element findById(short id) {
+  public Element findById(Short id) {
     return jdbcTemplate.queryForObject("select * from element where id = ?", ROW_MAPPER, id);
   }
 

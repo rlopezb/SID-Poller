@@ -14,24 +14,24 @@ public class RuleRepository {
   private final JdbcTemplate jdbcTemplate;
 
   private static final RowMapper<Rule> ROW_MAPPER = (rs, _) -> new Rule(
-      rs.getShort("id"),
-      rs.getShort("element_type_id"),
-      rs.getString("discoverer"),
-      rs.getShort("collector_id"),
-      rs.getShort("net_id"),
-      rs.getShort("grp_id"),
-      rs.getShort("service_id"),
-      rs.getShort("service_type_id"),
-      rs.getShort("type"),
-      rs.getShort("src_type"),
-      rs.getString("address"),
-      rs.getString("pattern"),
-      rs.getString("check"),
-      rs.getString("name"),
-      rs.getShort("scale")
+      rs.getObject("id", Short.class),
+      rs.getObject("element_type_id", Short.class),
+      rs.getObject("discoverer", String.class),
+      rs.getObject("collector_id", Short.class),
+      rs.getObject("net_id", Short.class),
+      rs.getObject("grp_id", Short.class),
+      rs.getObject("service_id", Short.class),
+      rs.getObject("service_type_id", Short.class),
+      rs.getObject("type", Short.class),
+      rs.getObject("src_type", Short.class),
+      rs.getObject("address", String.class),
+      rs.getObject("pattern", String.class),
+      rs.getObject("check", String.class),
+      rs.getObject("name", String.class),
+      rs.getObject("scale", Integer.class)
   );
 
-  public List<Rule> findByDiscovererAndElementTypeId(String discoverer, short elementTypeId) {
+  public List<Rule> findByDiscovererAndElementTypeId(String discoverer, Short elementTypeId) {
     return jdbcTemplate.query(
         "select * from rule where discoverer = ? and element_type_id = ?",
         ROW_MAPPER, discoverer, elementTypeId

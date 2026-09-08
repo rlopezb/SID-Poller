@@ -6,8 +6,7 @@ import es.vodafone.sid.poller.worker.Worker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +45,7 @@ public class WorkerService {
   // and handles any exceptions or timeouts that may occur during execution
   public List<Metric> run(List<Worker> workers) {
     List<Metric> workersMetrics = new ArrayList<>();
-    OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+    Instant now = Instant.now();
     try (ExecutorService executor = Executors.newThreadPerTaskExecutor(createThreadFactory(name))) {
       List<Future<List<Metric>>> futures = executor.invokeAll(workers, workerTimeout, TimeUnit.MILLISECONDS);
       for (int i = 0; i < futures.size(); i++) {
@@ -83,7 +82,7 @@ public class WorkerService {
   }
 
   // This method generates a list of null metrics for a given worker and instant
-  private List<Metric> nullMetrics(Worker worker, OffsetDateTime instant) {
+  private List<Metric> nullMetrics(Worker worker, Instant instant) {
     return worker.getSources().stream()
         .map(source -> BaseSourceType.nullMetric(source, instant))
         .toList();

@@ -1,10 +1,10 @@
 package es.vodafone.sid.poller.model;
 
 public record Discoverer(
-    short id,
+    Short id,
     String name,
     String protocol,
     String cron,
-    int discovererTimeout,
-    int workerTimeout
+    Integer discovererTimeout,
+    Integer workerTimeout
 ) {}
