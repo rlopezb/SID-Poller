@@ -17,6 +17,10 @@ sid:
     scheduler:
       pool:
         size: 10
+  influxDB:
+    url: http://localhost:8181
+    token: ${INFLUXDB3_TOKEN}
+    database: sid
 logging:
   level:
     es:

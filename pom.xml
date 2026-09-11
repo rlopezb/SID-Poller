@@ -45,6 +45,11 @@
             <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.influxdb</groupId>
+            <artifactId>influxdb3-java</artifactId>
+            <version>1.11.0</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

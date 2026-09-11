@@ -1,5 +1,6 @@
 package es.vodafone.sid.poller.repository;
 
+import es.vodafone.sid.poller.configuration.InfluxClient;
 import es.vodafone.sid.poller.model.Metric;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,6 +12,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MetricRepository {
   private final JdbcTemplate jdbc;
+  private final InfluxClient influxClient;
+  public void influx(List<Metric> metrics) {
+
+  }
 
   public void insert(List<Metric> metrics) {
     var sql = """
