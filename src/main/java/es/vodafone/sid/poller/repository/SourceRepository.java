@@ -10,6 +10,7 @@ import java.math.BigInteger;
 import java.sql.Types;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Repository
@@ -93,7 +94,7 @@ public class SourceRepository {
     jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?",
         ps -> {
           ps.setObject(1, cache == null ? null : cache.longValue());
-          ps.setObject(2, instant, Types.TIMESTAMP_WITH_TIMEZONE);
+          ps.setObject(2, instant.atOffset(ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
           ps.setObject(3, id);
         }
     );

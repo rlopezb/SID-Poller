@@ -118,7 +118,7 @@ public class SnmpWalker extends Walker {
                                          String username, String securityLevel) {
     org.snmp4j.UserTarget<UdpAddress> target = new org.snmp4j.UserTarget<>();
     target.setAddress(new UdpAddress(host + "/" + port));
-    target.setRetries(1);
+    target.setRetries(0);
     target.setTimeout(5000);
     target.setVersion(SnmpConstants.version3);
     target.setSecurityLevel(resolveSecurityLevel(securityLevel));

@@ -41,7 +41,7 @@ public class SnmpWorker extends Worker {
     try {
       UserTarget<UdpAddress> target = new UserTarget<>();
       target.setAddress(new UdpAddress(element.name() + "/" + protocol.config().get("port").asInt(161)));
-      target.setRetries(1);
+      target.setRetries(0);
       target.setTimeout(5000);
       target.setVersion(SnmpConstants.version3);
 
@@ -91,6 +91,7 @@ public class SnmpWorker extends Worker {
           List<Metric> parsed = sourceTypeRegistry.get(source.type()).calculate(variable.toString(), List.of(source), now);
           if (parsed != null) {
             parsed.forEach(metric -> metricMap.put(metric.srcId(), metric));
+            log.debug("Parsed {} metrics for source {} on {}: {}", parsed.size(), source.name(), element.name(), parsed);
           }
         } catch (RuntimeException e) {
           log.warn("Could not measure source {}", source.name(), e);

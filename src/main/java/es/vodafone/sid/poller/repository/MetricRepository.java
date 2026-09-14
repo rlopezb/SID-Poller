@@ -1,5 +1,6 @@
 package es.vodafone.sid.poller.repository;
 
+import com.influxdb.v3.client.InfluxDBApiHttpException;
 import com.influxdb.v3.client.InfluxDBClient;
 import com.influxdb.v3.client.InfluxDBPartialWriteException;
 import com.influxdb.v3.client.write.WriteOptions;
@@ -55,6 +56,9 @@ public class MetricRepository {
     } catch (InfluxDBPartialWriteException e) {
       e.lineErrors().forEach(err -> log.warn(
           "Línea InfluxDB rechazada [{}]: {} -> {}", err.lineNumber(), err.errorMessage(), err.originalLine()));
+    } catch (InfluxDBApiHttpException e) {
+      log.error(lines.toString());
+      log.error("Error al escribir en InfluxDB: {}", e.getMessage(), e);
     }
   }
 

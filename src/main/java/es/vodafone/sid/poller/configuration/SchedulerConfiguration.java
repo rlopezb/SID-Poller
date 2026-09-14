@@ -1,4 +1,4 @@
-package es.vodafone.sid.poller.service;
+package es.vodafone.sid.poller.configuration;
 
 import es.vodafone.sid.poller.aggregator.Aggregator;
 import es.vodafone.sid.poller.model.Collector;
@@ -6,24 +6,28 @@ import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.DiscovererRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
+import es.vodafone.sid.poller.factory.AggregatorFactory;
+import es.vodafone.sid.poller.service.AggregatorService;
+import es.vodafone.sid.poller.factory.FinderFactory;
+import es.vodafone.sid.poller.service.WorkerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
-import org.springframework.stereotype.Service;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Slf4j
-@Service
+@Configuration
 @RequiredArgsConstructor
 // This service is responsible for scheduling the execution of collectors and discoverers based on their cron expressions.
-public class SchedulerService implements SchedulingConfigurer {
+public class SchedulerConfiguration implements SchedulingConfigurer {
 
   private final CollectorRepository collectorRepository;
   private final AggregatorFactory aggregatorFactory;

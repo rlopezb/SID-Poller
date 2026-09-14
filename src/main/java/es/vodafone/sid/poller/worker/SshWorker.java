@@ -6,7 +6,6 @@ import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.strategy.BaseSourceType;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelExec;
@@ -17,7 +16,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 

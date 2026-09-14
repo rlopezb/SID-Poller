@@ -1,4 +1,4 @@
-package es.vodafone.sid.poller.service;
+package es.vodafone.sid.poller.factory;
 
 import es.vodafone.sid.poller.aggregator.Aggregator;
 import es.vodafone.sid.poller.aggregator.SnmpAggregator;
@@ -8,6 +8,7 @@ import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
+import es.vodafone.sid.poller.service.WorkerService;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
