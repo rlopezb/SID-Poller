@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigInteger;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -89,7 +90,12 @@ public class SourceRepository {
   }
 
   public void updateCacheAndInstant(Short id, BigInteger cache, Instant instant) {
-
-    jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?", cache == null ? null : cache.longValue(), instant, id);
+    jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?",
+        ps -> {
+          ps.setObject(1, cache == null ? null : cache.longValue());
+          ps.setObject(2, instant, Types.TIMESTAMP_WITH_TIMEZONE);
+          ps.setObject(3, id);
+        }
+    );
   }
 }

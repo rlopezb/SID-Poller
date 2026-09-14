@@ -1,17 +1,15 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.aggregator.Aggregator;
-import es.vodafone.sid.poller.finder.Finder;
 import es.vodafone.sid.poller.model.Collector;
-import es.vodafone.sid.poller.model.Discoverer;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.DiscovererRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
@@ -71,11 +69,11 @@ public class SchedulerService implements SchedulingConfigurer {
       registrar.addCronTask(aggregatorService::aggregate, collector.cron());
     }
 
-    for (Discoverer discoverer : discovererRepository.findAll()) {
-      WalkerService walkerService = new WalkerService(discoverer.discovererTimeout(), discoverer.name());
-      Finder finder = finderFactory.create(discoverer, walkerService);
-      FinderService finderService = new FinderService(finder, discoverer, sourceRepository);
-      registrar.addCronTask(finderService::find, discoverer.cron());
-    }
+//    for (Discoverer discoverer : discovererRepository.findAll()) {
+//      WalkerService walkerService = new WalkerService(discoverer.discovererTimeout(), discoverer.name());
+//      Finder finder = finderFactory.create(discoverer, walkerService);
+//      FinderService finderService = new FinderService(finder, discoverer, sourceRepository);
+//      registrar.addCronTask(finderService::find, discoverer.cron());
+//    }
   }
 }

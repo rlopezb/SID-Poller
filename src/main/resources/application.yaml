@@ -28,4 +28,4 @@ logging:
         sid:
           poller: DEBUG
     org:
-      snmp4j: ERROR
+      snmp4j: TRACE
