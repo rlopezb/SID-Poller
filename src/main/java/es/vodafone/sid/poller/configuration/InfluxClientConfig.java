@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @Slf4j
-public class InfluxClient {
+public class InfluxClientConfig {
   @Value("${sid.influxDB.url}")
   private String url;
   @Value("${sid.influxDB.database}")
@@ -18,7 +18,7 @@ public class InfluxClient {
   private char[] token;
 
   @Bean
-  public InfluxDBClient influxDBClient() {
+  public InfluxDBClient client() {
     return InfluxDBClient.getInstance(url, token, database);
   }
 }

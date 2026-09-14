@@ -36,6 +36,7 @@ public class AggregatorService {
       if (metrics != null) {
         log.debug("{} aggregator metrics con tamaño: {}", collector.name(), metrics.size());
         metricRepository.insert(metrics);
+        metricRepository.influx(metrics);
       } else {
         log.warn("{} aggregator devolvió null", collector.name());
       }

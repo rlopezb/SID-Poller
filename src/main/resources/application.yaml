@@ -19,7 +19,7 @@ sid:
         size: 10
   influxDB:
     url: http://localhost:8181
-    token: ${INFLUXDB3_TOKEN}
+    token: apiv3_lJPuSxA6ZqOSyGibholjLbnBq1TDR0nI4b_r9d3-Wfgg2PP5VoNIjMZW0uAaSKq28UpKoO9damagP4XylA9FyA
     database: sid
 logging:
   level:
@@ -28,4 +28,4 @@ logging:
         sid:
           poller: DEBUG
     org:
-      snmp4j: TRACE
+      snmp4j: ERROR

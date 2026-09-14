@@ -1,20 +1,61 @@
 package es.vodafone.sid.poller.repository;
 
-import es.vodafone.sid.poller.configuration.InfluxClient;
+import com.influxdb.v3.client.InfluxDBClient;
+import com.influxdb.v3.client.InfluxDBPartialWriteException;
+import com.influxdb.v3.client.write.WriteOptions;
 import es.vodafone.sid.poller.model.Metric;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.Types;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class MetricRepository {
-  private final JdbcTemplate jdbc;
-  private final InfluxClient influxClient;
-  public void influx(List<Metric> metrics) {
+  private static final int INFLUX_BATCH_SIZE = 5000;
 
+  private final JdbcTemplate jdbc;
+  private final InfluxDBClient influxClient;
+
+  public void influx(List<Metric> metrics) {
+    var options = new WriteOptions.Builder().acceptPartial(true).build();
+
+    List<String> lines = new ArrayList<>(INFLUX_BATCH_SIZE);
+    int skipped = 0;
+
+    for (Metric metric : metrics) {
+      var line = metric.map();
+      if (line == null) {
+        skipped++;
+        continue;
+      }
+      lines.add(line);
+      if (lines.size() == INFLUX_BATCH_SIZE) {
+        flush(lines, options);
+        lines.clear();
+      }
+    }
+    if (!lines.isEmpty()) {
+      flush(lines, options);
+    }
+    if (skipped > 0) {
+      log.warn("{} metrics descartadas (value null) en escritura a InfluxDB", skipped);
+    }
+  }
+
+  private void flush(List<String> lines, WriteOptions options) {
+    try {
+      influxClient.writeRecords(lines, options);
+    } catch (InfluxDBPartialWriteException e) {
+      e.lineErrors().forEach(err -> log.warn(
+          "Línea InfluxDB rechazada [{}]: {} -> {}", err.lineNumber(), err.errorMessage(), err.originalLine()));
+    }
   }
 
   public void insert(List<Metric> metrics) {
@@ -27,7 +68,7 @@ public class MetricRepository {
           WHERE EXISTS (SELECT 1 FROM source WHERE id = ? AND active = true)
         """;
     jdbc.batchUpdate(sql, metrics, metrics.size(), (ps, metric) -> {
-      ps.setObject(1, metric.instant());
+      ps.setObject(1, metric.instant() != null ? metric.instant().atOffset(ZoneOffset.UTC) : null, Types.TIMESTAMP_WITH_TIMEZONE);
       ps.setObject(2, metric.srcId());
       ps.setObject(3, metric.elementId());
       ps.setObject(4, metric.elementTypeId());

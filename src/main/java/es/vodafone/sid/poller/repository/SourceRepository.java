@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigInteger;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Repository
@@ -33,10 +34,8 @@ public class SourceRepository {
       rs.getObject("discoverer_id", Short.class),
       rs.getObject("address", String.class),
       rs.getObject("capture", String.class),
-      rs.getObject("instant", Instant.class),
-      rs.getObject("cache", Long.class) == null ?
-          new BigInteger(Long.toUnsignedString(rs.getObject("cache", Long.class))) :
-          null,
+      rs.getObject("instant", OffsetDateTime.class) == null ? null : rs.getObject("instant", OffsetDateTime.class).toInstant(),
+      rs.getObject("cache", Long.class) == null ? null : new BigInteger(Long.toUnsignedString(rs.getObject("cache", Long.class))),
       rs.getObject("scale", Integer.class),
       rs.getObject("active", Boolean.class)
   );
