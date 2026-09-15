@@ -13,7 +13,7 @@ import tools.jackson.databind.ObjectMapper;
 public class ProtocolRepository {
   private final JdbcTemplate jdbcTemplate;
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-  private static final RowMapper<Protocol> ROW_MAPPER = (rs, _) -> {
+  private static final RowMapper<Protocol> ROW_MAPPER = (rs, k) -> {
     JsonNode config = OBJECT_MAPPER.readTree(rs.getString("config"));
 
     return new Protocol(

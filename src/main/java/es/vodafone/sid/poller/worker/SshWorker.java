@@ -69,7 +69,7 @@ public class SshWorker extends Worker {
         Map<String, List<Source>> multiSources = new HashMap<>();
         for (Source source : sources) {
           if (source.isMulti() && source.address() != null) {
-            multiSources.computeIfAbsent(source.address(), _ -> new ArrayList<>()).add(source);
+            multiSources.computeIfAbsent(source.address(), s -> new ArrayList<>()).add(source);
           }
         }
         for (Map.Entry<String, List<Source>> multiSource : multiSources.entrySet()) {

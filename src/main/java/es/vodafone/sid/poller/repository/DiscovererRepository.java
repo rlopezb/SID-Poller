@@ -13,7 +13,7 @@ import java.util.List;
 public class DiscovererRepository {
   private final JdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<Discoverer> ROW_MAPPER = (rs, _) -> new Discoverer(
+  private static final RowMapper<Discoverer> ROW_MAPPER = (rs, K) -> new Discoverer(
       rs.getObject("id", Short.class),
       rs.getObject("name", String.class),
       rs.getObject("protocol", String.class),

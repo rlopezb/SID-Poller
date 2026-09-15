@@ -13,7 +13,7 @@ import java.util.List;
 public class ElementRepository {
   private final JdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<Element> ROW_MAPPER = (rs, _) -> new Element(
+  private static final RowMapper<Element> ROW_MAPPER = (rs, k) -> new Element(
       rs.getObject("id", Short.class),
       rs.getObject("name", String.class),
       rs.getObject("element_type_id", Short.class),

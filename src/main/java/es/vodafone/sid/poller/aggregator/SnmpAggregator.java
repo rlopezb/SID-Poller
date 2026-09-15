@@ -32,8 +32,6 @@ public class SnmpAggregator extends Aggregator {
   @Override
   public List<Metric> call() {
     List<Source> sources = sourceRepository.findByCollectorId(collector.id());
-    // DEBUG
-    sources.subList(1, sources.size() - 1).clear();
     Map<Short, Protocol> protocolCache = new HashMap<>();
     List<Worker> workers = new ArrayList<>();
     for (List<Source> group : groupByElement(sources)) {

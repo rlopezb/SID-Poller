@@ -38,7 +38,7 @@ public class CounterSourceType extends BaseSourceType {
         sourceRepository.updateCacheAndInstant(source.id(), current, instant);
 
         BigInteger rate = seconds > 0
-            ? delta.divide(BigInteger.valueOf(seconds))
+            ? delta.divide(BigInteger.valueOf(seconds)).multiply(new BigInteger("8"))
             : BigInteger.ZERO;
 
         return List.of(metric(source, instant, rate));

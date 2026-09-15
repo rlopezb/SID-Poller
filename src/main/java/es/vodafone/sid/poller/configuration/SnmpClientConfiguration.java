@@ -36,6 +36,7 @@ public class SnmpClientConfiguration {
   @Bean(destroyMethod = "close")
   public Snmp snmp(USM usm) throws IOException {
     SecurityProtocols.getInstance().addDefaultProtocols();
+    SecurityProtocols.getInstance().addAuthenticationProtocol(new AuthSHA());
 
     SecurityModels securityModels = new SecurityModels();
     securityModels.addSecurityModel(usm);
@@ -82,7 +83,7 @@ public class SnmpClientConfiguration {
 
   private static OID resolveAuthProtocol(String protocol) {
     return switch (protocol.toUpperCase()) {
-      case "SHA" -> AuthSHA.ID;
+      case "SHA", "SHA-96" -> AuthSHA.ID;
       case "SHA-256" -> AuthHMAC192SHA256.ID;
       case "SHA-512" -> AuthHMAC384SHA512.ID;
       default -> AuthMD5.ID;

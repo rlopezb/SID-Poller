@@ -6,7 +6,6 @@ public record Collector(
     String protocol,
     String cron,
     Integer collectorTimeout,
-    Integer workerTimeout,
-    Short size,
-    Short queue) {
+    Integer workerTimeout
+) {
 }

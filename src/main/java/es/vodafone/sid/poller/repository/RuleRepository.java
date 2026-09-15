@@ -13,7 +13,7 @@ import java.util.List;
 public class RuleRepository {
   private final JdbcTemplate jdbcTemplate;
 
-  private static final RowMapper<Rule> ROW_MAPPER = (rs, _) -> new Rule(
+  private static final RowMapper<Rule> ROW_MAPPER = (rs, k) -> new Rule(
       rs.getObject("id", Short.class),
       rs.getObject("element_type_id", Short.class),
       rs.getObject("discoverer", String.class),

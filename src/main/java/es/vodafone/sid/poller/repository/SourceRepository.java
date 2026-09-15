@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SourceRepository {
   private final JdbcTemplate jdbcTemplate;
-  private static final RowMapper<Source> ROW_MAPPER = (rs, _) -> new Source(
+  private static final RowMapper<Source> ROW_MAPPER = (rs, k) -> new Source(
       rs.getObject("id", Short.class),
       rs.getObject("name", String.class),
       rs.getObject("description", String.class),
