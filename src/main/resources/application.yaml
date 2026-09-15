@@ -19,7 +19,7 @@ sid:
         size: 10
   influxDB:
     url: http://localhost:8181
-    token: apiv3_lJPuSxA6ZqOSyGibholjLbnBq1TDR0nI4b_r9d3-Wfgg2PP5VoNIjMZW0uAaSKq28UpKoO9damagP4XylA9FyA
+    token: ${INFLUXDB3_TOKEN}
     database: sid
 logging:
   level:

@@ -7,6 +7,7 @@ import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.Snmp;
 import org.snmp4j.Target;
+import org.snmp4j.UserTarget;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.smi.OID;
@@ -44,7 +45,13 @@ public class SnmpWalker extends Walker {
     String username = config.get("username").asString();
     String securityLevel = config.get("securityLevel").asString("authPriv");
 
-    Target<UdpAddress> target = buildTarget(element.name(), port, username, securityLevel);
+    UserTarget<UdpAddress> target = new UserTarget<>();
+    target.setAddress(new UdpAddress(element.name() + "/" + port));
+    target.setRetries(protocol.config().get("retries").asInt(1));
+    target.setTimeout(protocol.config().get("timeout").asInt(1000));
+    target.setVersion(SnmpConstants.version3);
+    target.setSecurityLevel(resolveSecurityLevel(securityLevel));
+    target.setSecurityName(new OctetString(username));
     snmpUserRegistry.accept(protocol, target.getAddress());
     TreeUtils treeUtils = new TreeUtils(snmp, new DefaultPDUFactory());
 
@@ -114,17 +121,6 @@ public class SnmpWalker extends Walker {
     return sources;
   }
 
-  private Target<UdpAddress> buildTarget(String host, int port,
-                                         String username, String securityLevel) {
-    org.snmp4j.UserTarget<UdpAddress> target = new org.snmp4j.UserTarget<>();
-    target.setAddress(new UdpAddress(host + "/" + port));
-    target.setRetries(0);
-    target.setTimeout(5000);
-    target.setVersion(SnmpConstants.version3);
-    target.setSecurityLevel(resolveSecurityLevel(securityLevel));
-    target.setSecurityName(new OctetString(username));
-    return target;
-  }
 
   private int resolveSecurityLevel(String level) {
     return switch (level.toUpperCase()) {
