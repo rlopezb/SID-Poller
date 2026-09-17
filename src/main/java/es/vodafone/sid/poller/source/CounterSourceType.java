@@ -1,4 +1,4 @@
-package es.vodafone.sid.poller.strategy;
+package es.vodafone.sid.poller.source;
 
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Source;
@@ -26,7 +26,7 @@ public class CounterSourceType extends SingleSourceType {
             return nullMetric(source, instant);
         }
 
-        long seconds = ChronoUnit.SECONDS.between(source.instant(), instant);
+        long micros = ChronoUnit.MICROS.between(source.instant(), instant);
         BigInteger delta = current.subtract(source.cache());
 
         if (delta.compareTo(BigInteger.ZERO)< 0) {
@@ -35,8 +35,8 @@ public class CounterSourceType extends SingleSourceType {
 
         sourceRepository.updateCacheAndInstant(source.id(), current, instant);
 
-        BigInteger rate = seconds > 0
-            ? delta.divide(BigInteger.valueOf(seconds)).multiply(new BigInteger("8"))
+        BigInteger rate = micros > 0
+            ? delta.multiply(BigInteger.valueOf(8)).multiply(BigInteger.valueOf(1000000)).divide(BigInteger.valueOf(micros))
             : BigInteger.ZERO;
 
         return metric(source, instant, rate);

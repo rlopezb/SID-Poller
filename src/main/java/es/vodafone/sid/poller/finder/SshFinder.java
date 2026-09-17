@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.*;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.RuleRepository;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
 import es.vodafone.sid.poller.service.WalkerService;
 import es.vodafone.sid.poller.walker.SshWalker;
 import es.vodafone.sid.poller.walker.Walker;
@@ -16,8 +17,8 @@ import java.util.Map;
 
 public class SshFinder extends Finder {
   public final SshClient sshClient;
-  public SshFinder(ElementRepository elementRepository, RuleRepository ruleRepository, Discoverer discoverer, ProtocolRepository protocolRepository, WalkerService walkerService, SshClient sshClient) {
-    super(elementRepository, ruleRepository, discoverer, protocolRepository, walkerService);
+  public SshFinder(ElementRepository elementRepository, RuleRepository ruleRepository, Discoverer discoverer, ProtocolRepository protocolRepository, WalkerService walkerService, SshClient sshClient, RuleTypeRegistry ruleTypeRegistry) {
+    super(elementRepository, ruleRepository, discoverer, protocolRepository, walkerService, ruleTypeRegistry);
     this.sshClient = sshClient;
   }
 
@@ -35,7 +36,7 @@ public class SshFinder extends Finder {
       Protocol protocol = protocolCache.computeIfAbsent(element.elementTypeId(),
           id -> protocolRepository.getByProtocolAndElementTypeId(discoverer.protocol(), id));
 
-      walkers.add(new SshWalker(discoverer.id(), element, rules, protocol, sshClient));
+      walkers.add(new SshWalker(discoverer.id(), element, rules, protocol, sshClient, ruleTypeRegistry));
     }
     return walkerService.run(walkers);
   }

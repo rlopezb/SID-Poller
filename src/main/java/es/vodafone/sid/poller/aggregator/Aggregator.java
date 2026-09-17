@@ -7,7 +7,7 @@ import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.service.WorkerService;
-import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+import es.vodafone.sid.poller.source.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;

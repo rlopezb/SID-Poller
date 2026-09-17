@@ -5,6 +5,7 @@ import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.RuleRepository;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
 import es.vodafone.sid.poller.service.WalkerService;
 import lombok.RequiredArgsConstructor;
 
@@ -18,4 +19,5 @@ public abstract class Finder implements Callable<List<Source>> {
   public final Discoverer discoverer;
   public final ProtocolRepository protocolRepository;
   public final WalkerService walkerService;
+  public final RuleTypeRegistry ruleTypeRegistry;
 }

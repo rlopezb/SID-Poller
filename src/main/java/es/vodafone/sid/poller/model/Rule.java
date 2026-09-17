@@ -13,7 +13,7 @@ public record Rule(
     Short srcType,
     String address,
     String pattern,
-    String check,
+    String search,
     String name,
     Integer scale
 ) {}

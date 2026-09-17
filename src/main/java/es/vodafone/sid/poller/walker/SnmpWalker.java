@@ -1,12 +1,13 @@
 package es.vodafone.sid.poller.walker;
 
 import es.vodafone.sid.poller.model.Element;
-import es.vodafone.sid.poller.model.Rule;
 import es.vodafone.sid.poller.model.Protocol;
+import es.vodafone.sid.poller.model.Rule;
 import es.vodafone.sid.poller.model.Source;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
+import es.vodafone.sid.poller.rule.SingleRuleType;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.Snmp;
-import org.snmp4j.Target;
 import org.snmp4j.UserTarget;
 import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.SecurityLevel;
@@ -19,7 +20,6 @@ import org.snmp4j.util.TreeEvent;
 import org.snmp4j.util.TreeUtils;
 import tools.jackson.databind.JsonNode;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -32,8 +32,8 @@ public class SnmpWalker extends Walker {
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
 
   public SnmpWalker(short discovererId, Element element, List<Rule> rules,
-                    Protocol protocol, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry) {
-    super(discovererId, element, rules, protocol);
+                    Protocol protocol, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry, RuleTypeRegistry ruleTypeRegistry) {
+    super(discovererId, element, rules, protocol, ruleTypeRegistry);
     this.snmp = snmp;
     this.snmpUserRegistry = snmpUserRegistry;
   }
@@ -50,83 +50,52 @@ public class SnmpWalker extends Walker {
     target.setRetries(protocol.config().get("retries").asInt(1));
     target.setTimeout(protocol.config().get("timeout").asInt(1000));
     target.setVersion(SnmpConstants.version3);
-    target.setSecurityLevel(resolveSecurityLevel(securityLevel));
+    target.setSecurityLevel(switch (securityLevel.toUpperCase()) {
+      case "AUTHNOPRIV" -> SecurityLevel.AUTH_NOPRIV;
+      case "AUTHPRIV" -> SecurityLevel.AUTH_PRIV;
+      default -> SecurityLevel.NOAUTH_NOPRIV;
+    });
     target.setSecurityName(new OctetString(username));
     snmpUserRegistry.accept(protocol, target.getAddress());
     TreeUtils treeUtils = new TreeUtils(snmp, new DefaultPDUFactory());
 
     List<Source> discovered = new ArrayList<>();
     for (Rule rule : rules) {
-      List<Source> sources = walk(treeUtils, target, rule);
+      List<Source> sources = new ArrayList<>();
+      Pattern addressPattern = Pattern.compile(rule.pattern());
+      Pattern namePattern = Pattern.compile(rule.name());
+
+      List<TreeEvent> events = treeUtils.getSubtree(target, new OID(rule.search()));
+      for (TreeEvent event : events) {
+        if (event == null || event.isError()) {
+          log.warn("SNMP walk error on {} for search OID {}: {}",
+              element.name(), rule.search(),
+              event != null ? event.getErrorMessage() : "null event");
+          continue;
+        }
+
+        VariableBinding[] vbs = event.getVariableBindings();
+        if (vbs == null) continue;
+
+        for (VariableBinding vb : vbs) {
+          String oid = vb.getOid().toString();
+          String value = vb.getVariable().toString();
+
+          // El rule se aplica al valor devuelto
+          Matcher addressMatcher = addressPattern.matcher(value);
+          if (!addressMatcher.find()) continue;
+
+          Matcher nameMatcher = namePattern.matcher(value);
+          String name = nameMatcher.find() ? nameMatcher.group(1) : value;
+          String address = addressMatcher.group(1);
+
+          Source source = ((SingleRuleType)ruleTypeRegistry.get(rule.type())).calculate();
+
+          sources.add(source);
+        }
+      }
       discovered.addAll(sources);
     }
     return discovered;
-  }
-
-  private List<Source> walk(TreeUtils treeUtils, Target<UdpAddress> target, Rule rule) {
-    List<Source> sources = new ArrayList<>();
-    Pattern addressPattern = Pattern.compile(rule.pattern());
-    Pattern namePattern = Pattern.compile(rule.name());
-
-    List<TreeEvent> events = treeUtils.getSubtree(target, new OID(rule.address()));
-    for (TreeEvent event : events) {
-      if (event == null || event.isError()) {
-        log.warn("SNMP walk error on {} for OID {}: {}",
-            element.name(), rule.address(),
-            event != null ? event.getErrorMessage() : "null event");
-        continue;
-      }
-
-      VariableBinding[] vbs = event.getVariableBindings();
-      if (vbs == null) continue;
-
-      for (VariableBinding vb : vbs) {
-        String oid = vb.getOid().toString();
-        String value = vb.getVariable().toString();
-
-        // El rule se aplica al valor devuelto
-        Matcher addressMatcher = addressPattern.matcher(value);
-        if (!addressMatcher.find()) continue;
-
-        Matcher nameMatcher = namePattern.matcher(value);
-        String name = nameMatcher.find() ? nameMatcher.group(1) : value;
-        String address = addressMatcher.group(1);
-
-        sources.add(new Source(
-            (short) 0,
-            name,
-            null,
-            rule.srcType(),
-            element.id(),
-            element.elementTypeId(),
-            element.siteId(),
-            element.cdcId(),
-            element.zoneId(),
-            element.netId(),
-            element.archId(),
-            rule.grpId(),
-            rule.serviceId(),
-            rule.serviceTypeId(),
-            rule.collectorId(),
-            discovererId,
-            address,
-            null,
-            null,
-            BigInteger.ZERO,
-            rule.scale(),
-            true
-        ));
-      }
-    }
-    return sources;
-  }
-
-
-  private int resolveSecurityLevel(String level) {
-    return switch (level.toUpperCase()) {
-      case "AUTHNOPRIV" -> SecurityLevel.AUTH_NOPRIV;
-      case "AUTHPRIV"   -> SecurityLevel.AUTH_PRIV;
-      default           -> SecurityLevel.NOAUTH_NOPRIV;
-    };
   }
 }

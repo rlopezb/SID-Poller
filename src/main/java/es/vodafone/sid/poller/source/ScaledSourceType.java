@@ -1,18 +1,23 @@
-package es.vodafone.sid.poller.strategy;
+package es.vodafone.sid.poller.source;
 
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 
 @Slf4j
-public class DirectSourceType extends SingleSourceType {
+public class ScaledSourceType extends SingleSourceType {
 
     @Override
     public Metric calculate(String rawValue, Source source, Instant instant) {
         try {
-            return metric(source, instant, parse(rawValue));
+            BigInteger scaled = new BigDecimal(rawValue.trim())
+                .multiply(new BigDecimal(source.scale()))
+                .toBigInteger();
+            return metric(source, instant, scaled);
         } catch (NumberFormatException e) {
             log.warn("Could not parse value '{}' for source {}", rawValue, source.name());
             return nullMetric(source, instant);

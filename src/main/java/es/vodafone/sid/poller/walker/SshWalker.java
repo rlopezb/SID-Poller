@@ -1,9 +1,10 @@
 package es.vodafone.sid.poller.walker;
 
 import es.vodafone.sid.poller.model.Element;
-import es.vodafone.sid.poller.model.Rule;
 import es.vodafone.sid.poller.model.Protocol;
+import es.vodafone.sid.poller.model.Rule;
 import es.vodafone.sid.poller.model.Source;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelExec;
@@ -26,8 +27,8 @@ public class SshWalker extends Walker {
   private final SshClient sshClient;
 
   public SshWalker(short discovererId, Element element, List<Rule> rules,
-                   Protocol protocol, SshClient sshClient) {
-    super(discovererId, element, rules, protocol);
+                   Protocol protocol, SshClient sshClient, RuleTypeRegistry ruleTypeRegistry) {
+    super(discovererId, element, rules, protocol, ruleTypeRegistry);
     this.sshClient = sshClient;
   }
 

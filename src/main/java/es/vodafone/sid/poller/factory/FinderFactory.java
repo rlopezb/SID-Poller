@@ -8,6 +8,7 @@ import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.RuleRepository;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
 import es.vodafone.sid.poller.service.WalkerService;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
@@ -27,13 +28,14 @@ public class FinderFactory {
   private final SshClient sshClient;
   private final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
+  private final RuleTypeRegistry ruleTypeRegistry;
 
   public Finder create(Discoverer discoverer, WalkerService walkerService) {
     return switch (discoverer.protocol().toUpperCase()) {
       case "SSH" -> new SshFinder(elementRepository, ruleRepository, discoverer,
-          protocolRepository, walkerService, sshClient);
+          protocolRepository, walkerService, sshClient, ruleTypeRegistry);
       case "SNMP" -> new SnmpFinder(elementRepository, ruleRepository, discoverer,
-          protocolRepository, walkerService, snmp, snmpUserRegistry);
+          protocolRepository, walkerService, snmp, snmpUserRegistry, ruleTypeRegistry);
       default -> throw new IllegalArgumentException("Unknown protocol: " + discoverer.protocol());
     };
   }

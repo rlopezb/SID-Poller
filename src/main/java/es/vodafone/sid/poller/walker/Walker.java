@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.Element;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Rule;
 import es.vodafone.sid.poller.model.Source;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -15,4 +16,5 @@ public abstract class Walker implements Callable<List<Source>> {
   public final Element element;
   public final List<Rule> rules;
   public final Protocol protocol;
+  public final RuleTypeRegistry ruleTypeRegistry;
 }

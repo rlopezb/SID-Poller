@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.*;
 import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.RuleRepository;
+import es.vodafone.sid.poller.rule.RuleTypeRegistry;
 import es.vodafone.sid.poller.service.WalkerService;
 import es.vodafone.sid.poller.walker.SnmpWalker;
 import es.vodafone.sid.poller.walker.Walker;
@@ -20,8 +21,8 @@ public class SnmpFinder extends Finder {
   public final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
 
-  public SnmpFinder(ElementRepository elementRepository, RuleRepository ruleRepository, Discoverer discoverer, ProtocolRepository protocolRepository, WalkerService walkerService, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry) {
-    super(elementRepository, ruleRepository, discoverer, protocolRepository, walkerService);
+  public SnmpFinder(ElementRepository elementRepository, RuleRepository ruleRepository, Discoverer discoverer, ProtocolRepository protocolRepository, WalkerService walkerService, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry, RuleTypeRegistry ruleTypeRegistry) {
+    super(elementRepository, ruleRepository, discoverer, protocolRepository, walkerService, ruleTypeRegistry);
     this.snmp = snmp;
     this.snmpUserRegistry = snmpUserRegistry;
   }
@@ -40,7 +41,7 @@ public class SnmpFinder extends Finder {
       Protocol protocol = protocolCache.computeIfAbsent(element.elementTypeId(),
           id -> protocolRepository.getByProtocolAndElementTypeId(discoverer.protocol(), id));
 
-      walkers.add(new SnmpWalker(discoverer.id(), element, rules, protocol, snmp, snmpUserRegistry));
+      walkers.add(new SnmpWalker(discoverer.id(), element, rules, protocol, snmp, snmpUserRegistry, ruleTypeRegistry));
     }
     return walkerService.run(walkers);
   }

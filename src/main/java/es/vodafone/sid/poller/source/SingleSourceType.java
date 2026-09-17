@@ -1,4 +1,4 @@
-package es.vodafone.sid.poller.strategy;
+package es.vodafone.sid.poller.source;
 
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Source;

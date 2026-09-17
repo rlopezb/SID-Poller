@@ -1,7 +1,7 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.Metric;
-import es.vodafone.sid.poller.strategy.SourceType;
+import es.vodafone.sid.poller.source.SourceType;
 import es.vodafone.sid.poller.worker.Worker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;

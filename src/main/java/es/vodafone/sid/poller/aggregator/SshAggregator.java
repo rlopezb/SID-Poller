@@ -5,7 +5,7 @@ import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.service.WorkerService;
-import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+import es.vodafone.sid.poller.source.SourceTypeRegistry;
 import es.vodafone.sid.poller.worker.SshWorker;
 import es.vodafone.sid.poller.worker.Worker;
 import org.apache.sshd.client.SshClient;

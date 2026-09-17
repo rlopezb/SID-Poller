@@ -1,6 +1,6 @@
 package es.vodafone.sid.poller.model;
 
-import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+import es.vodafone.sid.poller.source.SourceTypeRegistry;
 
 import java.math.BigInteger;
 import java.time.Instant;
