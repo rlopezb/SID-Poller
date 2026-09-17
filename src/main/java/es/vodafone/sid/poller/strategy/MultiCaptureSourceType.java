@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static es.vodafone.sid.poller.strategy.SourceType.metric;
-
 @Slf4j
 public class MultiCaptureSourceType extends MultiSourceType {
 

@@ -5,7 +5,6 @@ import es.vodafone.sid.poller.model.Source;
 
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.List;
 
 public abstract class SourceType {
   protected abstract Boolean isMulti();
