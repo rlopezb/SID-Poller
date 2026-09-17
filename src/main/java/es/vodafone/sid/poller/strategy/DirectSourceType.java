@@ -5,19 +5,17 @@ import es.vodafone.sid.poller.model.Source;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Instant;
-import java.util.List;
 
 @Slf4j
-public class DirectSourceType extends BaseSourceType {
+public class DirectSourceType extends SingleSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
-        Source source = sources.getFirst();
+    public Metric calculate(String rawValue, Source source, Instant instant) {
         try {
-            return List.of(metric(source, instant, parse(rawValue)));
+            return metric(source, instant, parse(rawValue));
         } catch (NumberFormatException e) {
             log.warn("Could not parse value '{}' for source {}", rawValue, source.name());
-            return List.of(BaseSourceType.nullMetric(source, instant));
+            return nullMetric(source, instant);
         }
     }
 }

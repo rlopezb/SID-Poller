@@ -4,7 +4,7 @@ import es.vodafone.sid.poller.model.Element;
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Source;
-import es.vodafone.sid.poller.strategy.BaseSourceType;
+import es.vodafone.sid.poller.strategy.SourceType;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
@@ -50,7 +50,7 @@ public class SshWorker extends Worker {
           if (source.isMulti()) {
             continue;
           }
-          Metric metric = BaseSourceType.nullMetric(source, now);
+          Metric metric = SourceType.nullMetric(source, now);
           String rawValue = executeCommand(session, source.address());
           try {
             List<Metric> metrics = sourceTypeRegistry.get(source.type()).calculate(rawValue, List.of(source), now);

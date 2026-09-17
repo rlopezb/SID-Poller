@@ -3,9 +3,28 @@ package es.vodafone.sid.poller.strategy;
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Source;
 
+import java.math.BigInteger;
 import java.time.Instant;
 import java.util.List;
 
-public interface SourceType {
-    List<Metric> calculate(String rawValue, List<Source> sources, Instant instant);
+public abstract class SourceType {
+  protected abstract Boolean isMulti();
+  protected static Metric metric(Source source, Instant instant, BigInteger value) {
+    return new Metric(
+        instant,
+        source.id(), source.elementId(), source.elementTypeId(),
+        source.siteId(), source.cdcId(), source.zoneId(), source.netId(),
+        source.archId(), source.groupId(), source.serviceId(), source.serviceTypeId(),
+        value == null, value
+    );
+  }
+
+  protected static BigInteger parse(String rawValue) {
+    return new BigInteger(rawValue.trim());
+  }
+
+  public static Metric nullMetric(Source source, Instant instant) {
+    return metric(source, instant, null);
+  }
+
 }

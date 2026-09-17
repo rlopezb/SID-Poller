@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static es.vodafone.sid.poller.strategy.SourceType.metric;
+
 @Slf4j
-public class MultiCaptureSourceType extends BaseSourceType {
+public class MultiCaptureSourceType extends MultiSourceType {
 
     @Override
     public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
@@ -24,7 +26,7 @@ public class MultiCaptureSourceType extends BaseSourceType {
                 metrics.add(metric(source, instant, new BigInteger(matcher.group(1))));
             } else {
                 log.warn("Capture pattern '{}' did not match for source {}", source.capture(), source.name());
-                metrics.add(BaseSourceType.nullMetric(source, instant));
+                metrics.add(SourceType.nullMetric(source, instant));
             }
         }
         return metrics;

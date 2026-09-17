@@ -7,24 +7,22 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 
 @Slf4j
-public class SumLinesSourceType extends BaseSourceType {
+public class SumLinesSourceType extends SingleSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
-        Source source = sources.getFirst();
+    public Metric calculate(String rawValue, Source source, Instant instant) {
         try {
             BigInteger sum = Arrays.stream(rawValue.split("\\n"))
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .map(BigInteger::new)
                 .reduce(BigInteger.ZERO, BigInteger::add);
-            return List.of(metric(source, instant, sum));
+            return metric(source, instant, sum);
         } catch (NumberFormatException e) {
             log.warn("Could not parse sum lines value '{}' for source {}", rawValue, source.name());
-            return List.of(nullMetric(source, instant));
+            return nullMetric(source, instant);
         }
     }
 }

@@ -1,7 +1,7 @@
 package es.vodafone.sid.poller.service;
 
 import es.vodafone.sid.poller.model.Metric;
-import es.vodafone.sid.poller.strategy.BaseSourceType;
+import es.vodafone.sid.poller.strategy.SourceType;
 import es.vodafone.sid.poller.worker.Worker;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
@@ -84,7 +84,7 @@ public class WorkerService {
   // This method generates a list of null metrics for a given worker and instant
   private List<Metric> nullMetrics(Worker worker, Instant instant) {
     return worker.getSources().stream()
-        .map(source -> BaseSourceType.nullMetric(source, instant))
+        .map(source -> SourceType.nullMetric(source, instant))
         .toList();
   }
 }

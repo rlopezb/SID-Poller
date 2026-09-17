@@ -7,25 +7,23 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.List;
 
 @Slf4j
-public class SumScaledSourceType extends BaseSourceType {
+public class SumScaledSourceType extends SingleSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
-        Source sourcesFirst = sources.getFirst();
+    public Metric calculate(String rawValue, Source source, Instant instant) {
         try {
             BigInteger sum = Arrays.stream(rawValue.split("\\n"))
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .map(BigInteger::new)
                 .reduce(BigInteger.ZERO, BigInteger::add);
-            BigInteger scaled = sum.multiply(BigInteger.valueOf(sourcesFirst.scale()));
-            return List.of(metric(sourcesFirst, instant, scaled));
+            BigInteger scaled = sum.multiply(BigInteger.valueOf(source.scale()));
+            return metric(source, instant, scaled);
         } catch (NumberFormatException e) {
-            log.warn("Could not parse sum scaled value '{}' for sourcesFirst {}", rawValue, sourcesFirst.name());
-            return List.of(nullMetric(sourcesFirst, instant));
+            log.warn("Could not parse sum scaled value '{}' for source {}", rawValue, source.name());
+            return nullMetric(source, instant);
         }
     }
 }

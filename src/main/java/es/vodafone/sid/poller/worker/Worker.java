@@ -4,12 +4,11 @@ import es.vodafone.sid.poller.model.Element;
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Source;
-import es.vodafone.sid.poller.strategy.BaseSourceType;
+import es.vodafone.sid.poller.strategy.SourceType;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.time.Instant;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +26,7 @@ public abstract class Worker implements Callable<List<Metric>> {
   public List<Metric> buildMetrics(List<Source> sources, Map<Short, Metric> metricMap, Instant instant) {
     List<Metric> metrics = new ArrayList<>();
     for (Source source : sources) {
-      metrics.add(metricMap.getOrDefault(source.id(), BaseSourceType.nullMetric(source, instant)));
+      metrics.add(metricMap.getOrDefault(source.id(), SourceType.nullMetric(source, instant)));
     }
     return metrics;
   }

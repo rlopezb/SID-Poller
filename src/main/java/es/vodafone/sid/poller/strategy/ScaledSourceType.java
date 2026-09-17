@@ -7,22 +7,20 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
-import java.util.List;
 
 @Slf4j
-public class ScaledSourceType extends BaseSourceType {
+public class ScaledSourceType extends SingleSourceType {
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
-        Source source = sources.getFirst();
+    public Metric calculate(String rawValue, Source source, Instant instant) {
         try {
             BigInteger scaled = new BigDecimal(rawValue.trim())
                 .multiply(new BigDecimal(source.scale()))
                 .toBigInteger();
-            return List.of(metric(source, instant, scaled));
+            return metric(source, instant, scaled);
         } catch (NumberFormatException e) {
             log.warn("Could not parse value '{}' for source {}", rawValue, source.name());
-            return List.of(nullMetric(source, instant));
+            return nullMetric(source, instant);
         }
     }
 }

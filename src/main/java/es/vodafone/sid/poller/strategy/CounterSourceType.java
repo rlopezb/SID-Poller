@@ -9,23 +9,21 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
-public class CounterSourceType extends BaseSourceType {
+public class CounterSourceType extends SingleSourceType {
     private final SourceRepository sourceRepository;
     private final BigInteger wrapModulus;
 
     @Override
-    public List<Metric> calculate(String rawValue, List<Source> sources, Instant instant) {
-        Source source = sources.getFirst();
+    public Metric calculate(String rawValue, Source source, Instant instant) {
         BigInteger current = BigInteger.valueOf(Long.parseLong(rawValue.trim()));
 
         if (source.instant() == null) {
             log.debug("First reading for counter source {}, storing initial value", source.name());
             sourceRepository.updateCacheAndInstant(source.id(), current, instant);
-            return List.of(BaseSourceType.nullMetric(source, instant));
+            return nullMetric(source, instant);
         }
 
         long seconds = ChronoUnit.SECONDS.between(source.instant(), instant);
@@ -41,6 +39,6 @@ public class CounterSourceType extends BaseSourceType {
             ? delta.divide(BigInteger.valueOf(seconds)).multiply(new BigInteger("8"))
             : BigInteger.ZERO;
 
-        return List.of(metric(source, instant, rate));
+        return metric(source, instant, rate);
     }
 }
