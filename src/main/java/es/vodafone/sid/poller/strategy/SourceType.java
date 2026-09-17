@@ -26,5 +26,4 @@ public abstract class SourceType {
   public static Metric nullMetric(Source source, Instant instant) {
     return metric(source, instant, null);
   }
-
 }

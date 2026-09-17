@@ -4,8 +4,10 @@ import es.vodafone.sid.poller.model.Element;
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Source;
+import es.vodafone.sid.poller.strategy.MultiSourceType;
+import es.vodafone.sid.poller.strategy.SingleSourceType;
 import es.vodafone.sid.poller.strategy.SourceType;
-import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelExec;
@@ -23,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class SshWorker extends Worker {
   private final SshClient sshClient;
 
-  public SshWorker(Element element, List<Source> sources, Protocol protocol, SourceTypeRegistry sourceTypeRegistry, SshClient sshClient) {
+  public SshWorker(Element element, List<Source> sources, Protocol protocol, SingleSourceTypeRegistry sourceTypeRegistry, SshClient sshClient) {
     super(element, sources, protocol, sourceTypeRegistry);
     this.sshClient = sshClient;
   }
@@ -53,12 +55,7 @@ public class SshWorker extends Worker {
           Metric metric = SourceType.nullMetric(source, now);
           String rawValue = executeCommand(session, source.address());
           try {
-            List<Metric> metrics = sourceTypeRegistry.get(source.type()).calculate(rawValue, List.of(source), now);
-            if (metrics != null && !metrics.isEmpty() && metrics.getFirst() != null && metrics.size() == 1) {
-              metric = metrics.getFirst();
-            } else {
-              log.warn("Sigle source {} returned wrong metric", source.name());
-            }
+            metric = ((SingleSourceType)sourceTypeRegistry.get(source.type())).calculate(rawValue, source, now);
           } catch (RuntimeException e) {
             log.warn("Could not measure source {}", source.name(), e);
           }
@@ -79,7 +76,7 @@ public class SshWorker extends Worker {
             String rawValue = executeCommand(session, address);
             List<Metric> multiMetrics = rawValue == null
                 ? List.of()
-                : sourceTypeRegistry.get(SourceTypeRegistry.getMulti()).calculate(rawValue, groupedSources, now);
+                : ((MultiSourceType)sourceTypeRegistry.get(groupedSources.getFirst().type())).calculate(rawValue, groupedSources, now);
             if (multiMetrics != null) {
               multiMetrics.forEach(metric -> metricsMap.put(metric.srcId(), metric));
             }

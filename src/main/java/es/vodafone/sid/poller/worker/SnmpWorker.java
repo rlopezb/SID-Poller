@@ -4,6 +4,7 @@ import es.vodafone.sid.poller.model.Element;
 import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Source;
+import es.vodafone.sid.poller.strategy.SingleSourceType;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.PDU;
@@ -88,10 +89,10 @@ public class SnmpWorker extends Worker {
         }
 
         try {
-          List<Metric> parsed = sourceTypeRegistry.get(source.type()).calculate(variable.toString(), List.of(source), now);
+          Metric parsed = ((SingleSourceType)sourceTypeRegistry.get(source.type())).calculate(variable.toString(), source, now);
           if (parsed != null) {
-            parsed.forEach(metric -> metricMap.put(metric.srcId(), metric));
-            log.debug("Parsed {} metrics for source {} on {}: {}", parsed.size(), source.name(), element.name(), parsed);
+            metricMap.put(parsed.srcId(), parsed);
+            log.debug("Parsed metric for source {} on {}: {}", source.name(), element.name(), parsed);
           }
         } catch (RuntimeException e) {
           log.warn("Could not measure source {}", source.name(), e);

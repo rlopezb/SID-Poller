@@ -31,7 +31,7 @@ public record Source(
     Boolean active
 ) {
   public boolean isMulti() {
-    return type == SourceTypeRegistry.getMulti();
+    return SourceTypeRegistry.isMulti(type);
   }
 
   public boolean isSame(Source other) {

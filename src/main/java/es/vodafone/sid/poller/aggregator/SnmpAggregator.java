@@ -5,7 +5,7 @@ import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.service.WorkerService;
-import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
 import es.vodafone.sid.poller.worker.SnmpWorker;
 import es.vodafone.sid.poller.worker.Worker;
 import org.snmp4j.Snmp;
@@ -23,7 +23,7 @@ public class SnmpAggregator extends Aggregator {
 
   public SnmpAggregator(Collector collector, WorkerService workerService, ElementRepository elementRepository, SourceRepository sourceRepository, ProtocolRepository protocolRepository,
                         Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry,
-                        SourceTypeRegistry sourceTypeRegistry) {
+                        SingleSourceTypeRegistry sourceTypeRegistry) {
     super(collector, workerService, elementRepository, sourceRepository, protocolRepository, sourceTypeRegistry);
     this.snmp = snmp;
     this.snmpUserRegistry = snmpUserRegistry;
