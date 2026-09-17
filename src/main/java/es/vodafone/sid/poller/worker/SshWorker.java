@@ -7,7 +7,7 @@ import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.strategy.MultiSourceType;
 import es.vodafone.sid.poller.strategy.SingleSourceType;
 import es.vodafone.sid.poller.strategy.SourceType;
-import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.sshd.client.SshClient;
 import org.apache.sshd.client.channel.ChannelExec;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 public class SshWorker extends Worker {
   private final SshClient sshClient;
 
-  public SshWorker(Element element, List<Source> sources, Protocol protocol, SingleSourceTypeRegistry sourceTypeRegistry, SshClient sshClient) {
+  public SshWorker(Element element, List<Source> sources, Protocol protocol, SourceTypeRegistry sourceTypeRegistry, SshClient sshClient) {
     super(element, sources, protocol, sourceTypeRegistry);
     this.sshClient = sshClient;
   }

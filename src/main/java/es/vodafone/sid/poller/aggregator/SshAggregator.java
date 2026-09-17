@@ -5,7 +5,7 @@ import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.service.WorkerService;
-import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import es.vodafone.sid.poller.worker.SshWorker;
 import es.vodafone.sid.poller.worker.Worker;
 import org.apache.sshd.client.SshClient;
@@ -24,7 +24,7 @@ public class SshAggregator extends Aggregator {
                        SourceRepository sourceRepository,
                        ProtocolRepository protocolRepository,
                        SshClient sshClient,
-                       SingleSourceTypeRegistry sourceTypeRegistry) {
+                       SourceTypeRegistry sourceTypeRegistry) {
     super(collector, workerService, elementRepository, sourceRepository, protocolRepository, sourceTypeRegistry);
     this.sshClient = sshClient;
   }

@@ -7,7 +7,7 @@ import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.service.WorkerService;
-import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Collection;
@@ -22,7 +22,7 @@ public abstract class Aggregator implements Callable<List<Metric>> {
   public final ElementRepository elementRepository;
   public final SourceRepository sourceRepository;
   public final ProtocolRepository protocolRepository;
-  public final SingleSourceTypeRegistry sourceTypeRegistry;
+  public final SourceTypeRegistry sourceTypeRegistry;
 
   protected static Collection<List<Source>> groupByElement(List<Source> sources) {
     return sources.stream().collect(Collectors.groupingBy(Source::elementId)).values();

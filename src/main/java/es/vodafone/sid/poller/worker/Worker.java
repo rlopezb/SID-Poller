@@ -5,7 +5,6 @@ import es.vodafone.sid.poller.model.Metric;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Source;
 import es.vodafone.sid.poller.strategy.SourceType;
-import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
 import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

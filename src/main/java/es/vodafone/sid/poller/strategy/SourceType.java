@@ -6,8 +6,7 @@ import es.vodafone.sid.poller.model.Source;
 import java.math.BigInteger;
 import java.time.Instant;
 
-public abstract class SourceType {
-  protected abstract Boolean isMulti();
+public abstract sealed class SourceType permits SingleSourceType, MultiSourceType {
   protected static Metric metric(Source source, Instant instant, BigInteger value) {
     return new Metric(
         instant,

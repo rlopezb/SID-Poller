@@ -1,14 +1,17 @@
 package es.vodafone.sid.poller.strategy;
 
+import es.vodafone.sid.poller.repository.SourceRepository;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 public class MultiSourceTypeRegistry extends SourceTypeRegistry {
+  public MultiSourceTypeRegistry(SourceRepository sourceRepository) {
+    super(sourceRepository);
+  }
+
   @PostConstruct
   public void init() {
     registry = Map.of(

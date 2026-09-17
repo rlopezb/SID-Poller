@@ -9,7 +9,7 @@ import es.vodafone.sid.poller.repository.ElementRepository;
 import es.vodafone.sid.poller.repository.ProtocolRepository;
 import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.service.WorkerService;
-import es.vodafone.sid.poller.strategy.SingleSourceTypeRegistry;
+import es.vodafone.sid.poller.strategy.SourceTypeRegistry;
 import lombok.RequiredArgsConstructor;
 import org.apache.sshd.client.SshClient;
 import org.snmp4j.Snmp;
@@ -27,7 +27,7 @@ public class AggregatorFactory {
   private final SshClient sshClient;
   private final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
-  private final SingleSourceTypeRegistry sourceTypeRegistry;
+  private final SourceTypeRegistry sourceTypeRegistry;
 
   public Aggregator create(Collector collector, WorkerService workerService) {
     return switch (collector.protocol().toUpperCase()) {

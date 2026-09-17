@@ -2,15 +2,18 @@ package es.vodafone.sid.poller.strategy;
 
 import es.vodafone.sid.poller.repository.SourceRepository;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 public class SingleSourceTypeRegistry extends SourceTypeRegistry {
     private final SourceRepository sourceRepository;
+
+    public SingleSourceTypeRegistry(SourceRepository sourceRepository, SourceRepository sourceRepository1) {
+        super(sourceRepository);
+      this.sourceRepository = sourceRepository1;
+    }
 
     @PostConstruct
     public void init() {
