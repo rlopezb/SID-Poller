@@ -45,7 +45,8 @@ public class InterfaceRuleType extends MultiRuleType {
           null,
           null,
           rule.scale(),
-          true
+          true,
+          null
       );
       sources.add(source);
     }

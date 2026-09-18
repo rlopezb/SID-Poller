@@ -28,15 +28,15 @@ public record Source(
     Instant instant,
     BigInteger cache,
     Short scale,
-    Boolean active
+    Boolean active,
+    Integer ticks
 ) {
   public boolean isMulti() {
     return SourceTypeRegistry.isMulti(type);
   }
 
   public boolean isSame(Source other) {
-    return this.name().equals(other.name())
-        && Objects.equals(this.description(), other.description())
+    return Objects.equals(this.description(), other.description())
         && Objects.equals(this.type(), other.type())
         && Objects.equals(this.elementId(), other.elementId())
         && Objects.equals(this.elementTypeId(), other.elementTypeId())
@@ -52,6 +52,12 @@ public record Source(
         && Objects.equals(this.discovererId(), other.discovererId())
         && Objects.equals(this.address(),other.address())
         && Objects.equals(this.capture(), other.capture())
-        && Objects.equals(this.scale(), other.scale());
+        && Objects.equals(this.scale(), other.scale())
+        && Objects.equals(this.active(), other.active())
+        && Objects.equals(this.ticks(), other.ticks())
+        && Objects.equals(this.cache(), other.cache())
+        && Objects.equals(this.instant(), other.instant())
+        && Objects.equals(this.id(), other.id())
+        && Objects.equals(this.name(), other.name());
   }
 }

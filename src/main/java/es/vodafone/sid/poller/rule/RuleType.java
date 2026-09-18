@@ -28,7 +28,8 @@ public abstract sealed class RuleType permits SingleRuleType, MultiRuleType {
         null,
         null,
         rule.scale(),
-        true
+        true,
+        null
     );
   }
 

@@ -101,7 +101,8 @@ public class SshWalker extends Walker {
           null,
           BigInteger.ZERO,
           rule.scale(),
-          true
+          true,
+          null
       ));
     }
     return sources;
