@@ -34,7 +34,7 @@ public class CounterSourceType extends SingleSourceType {
             delta = delta.add(wrapModulus);
         }
 
-        sourceRepository.updateCacheAndInstant(source.id(), current, instant);
+        sourceRepository.updateCacheInstantAndTicks(source.id(), current, instant, ticks);
 
         long micros = elapsedMicros(source, instant, ticks);
         BigInteger rate = micros > 0

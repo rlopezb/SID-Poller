@@ -91,16 +91,6 @@ public class SourceRepository {
     jdbcTemplate.update("delete from source where id = ?", id);
   }
 
-  public void updateCacheAndInstant(Short id, BigInteger cache, Instant instant) {
-    jdbcTemplate.update("update source set cache = ?, instant = ? where id = ?",
-        ps -> {
-          ps.setObject(1, cache == null ? null : cache.longValue());
-          ps.setObject(2, instant.atOffset(ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
-          ps.setObject(3, id);
-        }
-    );
-  }
-
   public void updateCacheInstantAndTicks(Short id, BigInteger cache, Instant instant, Long ticks) {
     jdbcTemplate.update("update source set cache = ?, instant = ?, ticks = ? where id = ?",
         ps -> {
