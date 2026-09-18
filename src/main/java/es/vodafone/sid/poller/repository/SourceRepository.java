@@ -40,7 +40,7 @@ public class SourceRepository {
       rs.getObject("cache", Long.class) == null ? null : new BigInteger(Long.toUnsignedString(rs.getObject("cache", Long.class))),
       rs.getObject("scale", Short.class),
       rs.getObject("active", Boolean.class),
-      rs.getObject("ticks", Integer.class)
+      rs.getObject("ticks", Long.class)
   );
 
   public List<Source> findAll() {

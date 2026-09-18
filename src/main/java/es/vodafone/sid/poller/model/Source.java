@@ -29,7 +29,7 @@ public record Source(
     BigInteger cache,
     Short scale,
     Boolean active,
-    Integer ticks
+    Long ticks
 ) {
   public boolean isMulti() {
     return SourceTypeRegistry.isMulti(type);
