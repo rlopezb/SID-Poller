@@ -100,4 +100,15 @@ public class SourceRepository {
         }
     );
   }
+
+  public void updateCacheInstantAndTicks(Short id, BigInteger cache, Instant instant, Long ticks) {
+    jdbcTemplate.update("update source set cache = ?, instant = ?, ticks = ? where id = ?",
+        ps -> {
+          ps.setObject(1, cache == null ? null : cache.longValue());
+          ps.setObject(2, instant.atOffset(ZoneOffset.UTC), Types.TIMESTAMP_WITH_TIMEZONE);
+          ps.setObject(3, ticks, Types.BIGINT);
+          ps.setObject(4, id);
+        }
+    );
+  }
 }

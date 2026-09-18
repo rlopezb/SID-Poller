@@ -19,7 +19,7 @@ import org.snmp4j.smi.*;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List  ;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -27,6 +27,7 @@ import java.util.function.BiConsumer;
 public class SnmpWorker extends Worker {
   private final Snmp snmp;
   private final BiConsumer<Protocol, UdpAddress> snmpUserRegistry;
+  private static final OID SYS_UP_TIME_OID = new OID(SnmpConstants.sysUpTime);
 
   public SnmpWorker(Element element, List<Source> sources, Protocol protocol, SourceTypeRegistry sourceTypeRegistry, Snmp snmp, BiConsumer<Protocol, UdpAddress> snmpUserRegistry) {
     super(element, sources, protocol, sourceTypeRegistry);
@@ -42,8 +43,8 @@ public class SnmpWorker extends Worker {
     try {
       UserTarget<UdpAddress> target = new UserTarget<>();
       target.setAddress(new UdpAddress(element.name() + "/" + protocol.config().get("port").asInt(161)));
-      target.setRetries(0);
-      target.setTimeout(5000);
+      target.setRetries(protocol.config().get("retries").asInt(1));
+      target.setTimeout(protocol.config().get("timeout").asInt(160));
       target.setVersion(SnmpConstants.version3);
 
       String securityLevel = protocol.config().get("securityLevel").asString("authPriv");
@@ -57,8 +58,8 @@ public class SnmpWorker extends Worker {
 
       ScopedPDU pdu = new ScopedPDU();
       pdu.setType(PDU.GET);
+      pdu.add(new VariableBinding(new OID(SYS_UP_TIME_OID)));
       sources.forEach(source -> pdu.add(new VariableBinding(new OID(source.address()))));
-
       ResponseEvent<?> event = snmp.send(pdu, target);
       if (event == null || event.getResponse() == null) {
         log.warn("No SNMP response from {}", element.name());
@@ -73,9 +74,17 @@ public class SnmpWorker extends Worker {
 
       Map<OID, Source> sourceByOid = new HashMap<>();
       sources.forEach(source -> sourceByOid.put(new OID(source.address()), source));
-
       for (int i = 0; i < response.size(); i++) {
+        Long ticks = null;
         VariableBinding binding = response.get(i);
+        if (binding.getOid().equals(SYS_UP_TIME_OID)) {
+          Variable variable = binding.getVariable();
+          if (!(variable instanceof UnsignedInteger32 timeTicks) || variable.isException()) {
+            log.debug("No sysUpTime available from {}: {}", element.name(), variable);
+          } else {
+            ticks = timeTicks.getValue();
+          }
+        }
         Source source = sourceByOid.get(binding.getOid());
         if (source == null) {
           log.warn("Unexpected OID {} in SNMP response from {} (not requested)", binding.getOid(), element.name());
@@ -89,7 +98,7 @@ public class SnmpWorker extends Worker {
         }
 
         try {
-          Metric parsed = ((SingleSourceType)sourceTypeRegistry.get(source.type())).calculate(variable.toString(), source, now);
+          Metric parsed = ((SingleSourceType) sourceTypeRegistry.get(source.type())).calculate(variable.toString(), source, now, ticks);
           if (parsed != null) {
             metricMap.put(parsed.srcId(), parsed);
             log.debug("Parsed metric for source {} on {}: {}", source.name(), element.name(), parsed);

@@ -10,7 +10,7 @@ import java.time.Instant;
 public class DirectSourceType extends SingleSourceType {
 
     @Override
-    public Metric calculate(String rawValue, Source source, Instant instant) {
+    public Metric calculate(String rawValue, Source source, Instant instant, Long ticks) {
         try {
             return metric(source, instant, parse(rawValue));
         } catch (NumberFormatException e) {

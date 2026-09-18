@@ -55,7 +55,7 @@ public class SshWorker extends Worker {
           Metric metric = SourceType.nullMetric(source, now);
           String rawValue = executeCommand(session, source.address());
           try {
-            metric = ((SingleSourceType)sourceTypeRegistry.get(source.type())).calculate(rawValue, source, now);
+            metric = ((SingleSourceType)sourceTypeRegistry.get(source.type())).calculate(rawValue, source, now, null);
           } catch (RuntimeException e) {
             log.warn("Could not measure source {}", source.name(), e);
           }

@@ -12,7 +12,7 @@ import java.util.Arrays;
 public class SumScaledSourceType extends SingleSourceType {
 
     @Override
-    public Metric calculate(String rawValue, Source source, Instant instant) {
+    public Metric calculate(String rawValue, Source source, Instant instant, Long ticks) {
         try {
             BigInteger sum = Arrays.stream(rawValue.split("\\n"))
                 .map(String::trim)
