@@ -3,7 +3,7 @@ package es.vodafone.sid.poller.model;
 public record Rule(
     Short id,
     Short elementTypeId,
-    String discoverer,
+    Short discovererId,
     Short collectorId,
     Short netId,
     Short grpId,
@@ -11,9 +11,9 @@ public record Rule(
     Short serviceTypeId,
     Short type,
     Short srcType,
-    String address,
+    String[] search,
     String pattern,
-    String search,
+    String address,
     String name,
-    Integer scale
+    Short scale
 ) {}

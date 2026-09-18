@@ -38,7 +38,7 @@ public class SourceRepository {
       rs.getObject("capture", String.class),
       rs.getObject("instant", OffsetDateTime.class) == null ? null : rs.getObject("instant", OffsetDateTime.class).toInstant(),
       rs.getObject("cache", Long.class) == null ? null : new BigInteger(Long.toUnsignedString(rs.getObject("cache", Long.class))),
-      rs.getObject("scale", Integer.class),
+      rs.getObject("scale", Short.class),
       rs.getObject("active", Boolean.class)
   );
 

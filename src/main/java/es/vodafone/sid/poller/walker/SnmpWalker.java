@@ -4,8 +4,8 @@ import es.vodafone.sid.poller.model.Element;
 import es.vodafone.sid.poller.model.Protocol;
 import es.vodafone.sid.poller.model.Rule;
 import es.vodafone.sid.poller.model.Source;
+import es.vodafone.sid.poller.rule.MultiRuleType;
 import es.vodafone.sid.poller.rule.RuleTypeRegistry;
-import es.vodafone.sid.poller.rule.SingleRuleType;
 import lombok.extern.slf4j.Slf4j;
 import org.snmp4j.Snmp;
 import org.snmp4j.UserTarget;
@@ -16,15 +16,15 @@ import org.snmp4j.smi.OctetString;
 import org.snmp4j.smi.UdpAddress;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.util.DefaultPDUFactory;
-import org.snmp4j.util.TreeEvent;
-import org.snmp4j.util.TreeUtils;
+import org.snmp4j.util.TableEvent;
+import org.snmp4j.util.TableUtils;
 import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class SnmpWalker extends Walker {
@@ -57,44 +57,32 @@ public class SnmpWalker extends Walker {
     });
     target.setSecurityName(new OctetString(username));
     snmpUserRegistry.accept(protocol, target.getAddress());
-    TreeUtils treeUtils = new TreeUtils(snmp, new DefaultPDUFactory());
+    TableUtils tableUtils = new TableUtils(snmp, new DefaultPDUFactory());
 
     List<Source> discovered = new ArrayList<>();
     for (Rule rule : rules) {
-      List<Source> sources = new ArrayList<>();
-      Pattern addressPattern = Pattern.compile(rule.pattern());
-      Pattern namePattern = Pattern.compile(rule.name());
-
-      List<TreeEvent> events = treeUtils.getSubtree(target, new OID(rule.search()));
-      for (TreeEvent event : events) {
+      OID[] searchOIDs = new OID[rule.search().length];
+      for (int i = 0; i < rule.search().length; i++) {
+        searchOIDs[i] = new OID(rule.search()[i]);
+      }
+      List<TableEvent> events = tableUtils.getTable(target, searchOIDs, null, null);
+      for (TableEvent event : events) {
         if (event == null || event.isError()) {
-          log.warn("SNMP walk error on {} for search OID {}: {}",
+          log.warn("SNMP walk error on {} for search OIDs {}: {}",
               element.name(), rule.search(),
               event != null ? event.getErrorMessage() : "null event");
           continue;
         }
 
-        VariableBinding[] vbs = event.getVariableBindings();
+        VariableBinding[] vbs = event.getColumns();
         if (vbs == null) continue;
-
+        Map<OID, String> results = new LinkedHashMap<>();
         for (VariableBinding vb : vbs) {
-          String oid = vb.getOid().toString();
-          String value = vb.getVariable().toString();
-
-          // El rule se aplica al valor devuelto
-          Matcher addressMatcher = addressPattern.matcher(value);
-          if (!addressMatcher.find()) continue;
-
-          Matcher nameMatcher = namePattern.matcher(value);
-          String name = nameMatcher.find() ? nameMatcher.group(1) : value;
-          String address = addressMatcher.group(1);
-
-          Source source = ((SingleRuleType)ruleTypeRegistry.get(rule.type())).calculate();
-
-          sources.add(source);
+          results.put(vb.getOid(), vb.getVariable().toString());
         }
+        List<Source> sources = ((MultiRuleType) ruleTypeRegistry.get(rule.type())).calculate(rule, element, results);
+        discovered.addAll(sources);
       }
-      discovered.addAll(sources);
     }
     return discovered;
   }

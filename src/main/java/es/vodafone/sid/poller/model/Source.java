@@ -27,7 +27,7 @@ public record Source(
     String capture,
     Instant instant,
     BigInteger cache,
-    Integer scale,
+    Short scale,
     Boolean active
 ) {
   public boolean isMulti() {

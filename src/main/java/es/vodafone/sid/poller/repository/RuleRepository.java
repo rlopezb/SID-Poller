@@ -16,7 +16,7 @@ public class RuleRepository {
   private static final RowMapper<Rule> ROW_MAPPER = (rs, k) -> new Rule(
       rs.getObject("id", Short.class),
       rs.getObject("element_type_id", Short.class),
-      rs.getObject("discoverer", String.class),
+      rs.getObject("discoverer_id", Short.class),
       rs.getObject("collector_id", Short.class),
       rs.getObject("net_id", Short.class),
       rs.getObject("grp_id", Short.class),
@@ -24,17 +24,17 @@ public class RuleRepository {
       rs.getObject("service_type_id", Short.class),
       rs.getObject("type", Short.class),
       rs.getObject("src_type", Short.class),
-      rs.getObject("address", String.class),
+      rs.getObject("search", String[].class),
       rs.getObject("pattern", String.class),
-      rs.getObject("check", String.class),
+      rs.getObject("address", String.class),
       rs.getObject("name", String.class),
-      rs.getObject("scale", Integer.class)
+      rs.getObject("scale", Short.class)
   );
 
-  public List<Rule> findByDiscovererAndElementTypeId(String discoverer, Short elementTypeId) {
+  public List<Rule> findByDiscovererAndElementTypeId(Short discovererId, Short elementTypeId) {
     return jdbcTemplate.query(
-        "select * from rule where discoverer = ? and element_type_id = ?",
-        ROW_MAPPER, discoverer, elementTypeId
+        "select * from rule where discoverer_id = ? and element_type_id = ?",
+        ROW_MAPPER, discovererId, elementTypeId
     );
   }
 }

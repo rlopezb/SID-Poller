@@ -35,7 +35,7 @@ public class SnmpFinder extends Finder {
     List<Walker> walkers = new ArrayList<>();
     for (Element element : elements) {
       List<Rule> rules = ruleRepository
-          .findByDiscovererAndElementTypeId(discoverer.protocol(), element.elementTypeId());
+          .findByDiscovererAndElementTypeId(discoverer.id(), element.elementTypeId());
       if (rules.isEmpty()) continue;
 
       Protocol protocol = protocolCache.computeIfAbsent(element.elementTypeId(),
