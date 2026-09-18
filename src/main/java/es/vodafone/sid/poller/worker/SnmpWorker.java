@@ -74,8 +74,8 @@ public class SnmpWorker extends Worker {
 
       Map<OID, Source> sourceByOid = new HashMap<>();
       sources.forEach(source -> sourceByOid.put(new OID(source.address()), source));
+      Long ticks = null;
       for (int i = 0; i < response.size(); i++) {
-        Long ticks = null;
         VariableBinding binding = response.get(i);
         if (binding.getOid().equals(SYS_UP_TIME_OID)) {
           Variable variable = binding.getVariable();
@@ -84,6 +84,7 @@ public class SnmpWorker extends Worker {
           } else {
             ticks = timeTicks.getValue();
           }
+          continue;
         }
         Source source = sourceByOid.get(binding.getOid());
         if (source == null) {

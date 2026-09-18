@@ -28,14 +28,8 @@ public class MetricRepository {
     var options = new WriteOptions.Builder().acceptPartial(true).build();
 
     List<String> lines = new ArrayList<>(INFLUX_BATCH_SIZE);
-    int skipped = 0;
-
     for (Metric metric : metrics) {
       var line = metric.map();
-      if (line == null) {
-        skipped++;
-        continue;
-      }
       lines.add(line);
       if (lines.size() == INFLUX_BATCH_SIZE) {
         flush(lines, options);
@@ -44,9 +38,6 @@ public class MetricRepository {
     }
     if (!lines.isEmpty()) {
       flush(lines, options);
-    }
-    if (skipped > 0) {
-      log.warn("{} metrics descartadas (value null) en escritura a InfluxDB", skipped);
     }
   }
 

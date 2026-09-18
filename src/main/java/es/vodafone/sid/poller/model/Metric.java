@@ -20,7 +20,6 @@ public record Metric(
     BigInteger value
 ) {
   public String map(){
-    if(value == null) return null;
     StringBuilder builder = new StringBuilder();
     builder.setLength(0);
     builder.append("metric");
@@ -35,19 +34,21 @@ public record Metric(
     appendTag(builder, "groupId", this.groupId);
     appendTag(builder, "serviceId", this.serviceId);
     appendTag(builder, "serviceTypeId", this.serviceTypeId);
-    appendTag(builder, "error", this.error);
-    builder.append(' ');
-    appendValue(builder, this.value());
-    builder.append(' ').append(toEpochNanos(this.instant()));
+    appendField(builder, error, this.value);
+    appendInstant(builder, instant);
     return builder.toString();
   }
+
   private void appendTag(StringBuilder builder, String key, Object value) {
     if (value!=null) builder.append(',').append(key).append('=').append(value);
   }
-  private void appendValue(StringBuilder builder, BigInteger value) {
-    builder.append("value=").append(value).append('u');
+
+  private void appendField(StringBuilder builder, Boolean error, BigInteger value) {
+    builder.append(" ").append("error=").append(error);
+    if(value!=null) builder.append(",").append("value=").append(value).append('u');
   }
-  private long toEpochNanos(Instant instant) {
-    return instant.getEpochSecond() * 1_000_000_000L + instant.getNano();
+
+  private void appendInstant(StringBuilder builder, Instant instant) {
+    builder.append(' ').append(instant.getEpochSecond() * 1_000_000_000L + instant.getNano());
   }
 }
