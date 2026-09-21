@@ -35,8 +35,8 @@ public class CounterSourceType extends SingleSourceType {
         }
 
         sourceRepository.updateCacheInstantAndTicks(source.id(), current, instant, ticks);
-
         long micros = elapsedMicros(source, instant, ticks);
+        log.debug("Elapsed micros since last time: {}",micros);
         BigInteger rate = micros > 0
             ? delta.multiply(BigInteger.valueOf(8)).multiply(BigInteger.valueOf(1000000)).divide(BigInteger.valueOf(micros))
             : BigInteger.ZERO;

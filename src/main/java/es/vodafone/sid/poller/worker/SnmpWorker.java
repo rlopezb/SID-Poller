@@ -83,6 +83,7 @@ public class SnmpWorker extends Worker {
             log.debug("No sysUpTime available from {}: {}", element.name(), variable);
           } else {
             ticks = timeTicks.getValue();
+            log.debug("sysUpTime from {}: {}", element.name(), variable);
           }
           continue;
         }
