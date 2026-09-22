@@ -86,8 +86,12 @@ public class FinderService {
               .filter(existing -> discoveredGroup.stream().noneMatch(existing::same)
                   && discoveredGroup.stream().noneMatch(existing::renamed))
               .toList();
-          List<Source> toDeactivate = disappeared.stream()
+          List<Source> withMetrics = disappeared.stream()
               .filter(source -> sourceRepository.hasMetrics(source.id()))
+              .toList();
+
+          List<Source> toDeactivate = withMetrics.stream()
+              .filter(source -> Boolean.TRUE.equals(source.active()))
               .toList();
           if (!toDeactivate.isEmpty()) {
             log.info("{} deactivating {} disappeared sources with metrics for element {}",
@@ -96,7 +100,7 @@ public class FinderService {
           }
 
           List<Source> toDelete = disappeared.stream()
-              .filter(source -> !toDeactivate.contains(source))
+              .filter(source -> !withMetrics.contains(source))
               .toList();
           if (!toDelete.isEmpty()) {
             log.info("{} deleting {} disappeared sources without metrics for element {}",
