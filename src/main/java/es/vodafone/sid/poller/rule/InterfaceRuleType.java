@@ -10,6 +10,7 @@ import org.snmp4j.smi.OID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Slf4j
@@ -18,11 +19,17 @@ public class InterfaceRuleType extends MultiRuleType {
   @Override
   public List<Source> calculate(Rule rule, Element element, Map<OID, String> results) {
     List<Source> sources = new ArrayList<>();
-    Pattern pattern = Pattern.compile(rule.pattern());
     String result = String.join(" ", results.values());
-    if (pattern.matcher(result).find()) {
-      String name = "";
-      String address = "";
+    if (Pattern.compile(rule.pattern()).matcher(result).find()) {
+      OID oid = null;
+      if (!results.isEmpty()) {
+        oid = results.keySet().iterator().next();
+      }
+      assert oid != null;
+      String index = oid.toString().substring(oid.toString().lastIndexOf('.') + 1);
+      Matcher matcher = Pattern.compile(rule.name()).matcher(result);
+      String name = matcher.find() ? matcher.group() : null;
+      String address = rule.address().replaceAll("%INST%",index);
       Source source = new Source(
           null,
           name,

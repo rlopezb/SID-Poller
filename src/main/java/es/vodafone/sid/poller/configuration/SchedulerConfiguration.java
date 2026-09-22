@@ -1,7 +1,9 @@
 package es.vodafone.sid.poller.configuration;
 
 import es.vodafone.sid.poller.aggregator.Aggregator;
+import es.vodafone.sid.poller.finder.Finder;
 import es.vodafone.sid.poller.model.Collector;
+import es.vodafone.sid.poller.model.Discoverer;
 import es.vodafone.sid.poller.repository.CollectorRepository;
 import es.vodafone.sid.poller.repository.DiscovererRepository;
 import es.vodafone.sid.poller.repository.MetricRepository;
@@ -9,6 +11,8 @@ import es.vodafone.sid.poller.repository.SourceRepository;
 import es.vodafone.sid.poller.factory.AggregatorFactory;
 import es.vodafone.sid.poller.service.AggregatorService;
 import es.vodafone.sid.poller.factory.FinderFactory;
+import es.vodafone.sid.poller.service.FinderService;
+import es.vodafone.sid.poller.service.WalkerService;
 import es.vodafone.sid.poller.service.WorkerService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -66,18 +70,18 @@ public class SchedulerConfiguration implements SchedulingConfigurer {
     scheduler.initialize();
     registrar.setTaskScheduler(scheduler);
 
-    for (Collector collector : collectorRepository.findAll()) {
-      WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
-      Aggregator aggregator = aggregatorFactory.create(collector, workerService);
-      AggregatorService aggregatorService = new AggregatorService(aggregator, collector, metricRepository);
-      registrar.addCronTask(aggregatorService::aggregate, collector.cron());
-    }
-
-//    for (Discoverer discoverer : discovererRepository.findAll()) {
-//      WalkerService walkerService = new WalkerService(discoverer.discovererTimeout(), discoverer.name());
-//      Finder finder = finderFactory.create(discoverer, walkerService);
-//      FinderService finderService = new FinderService(finder, discoverer, sourceRepository);
-//      registrar.addCronTask(finderService::find, discoverer.cron());
+//    for (Collector collector : collectorRepository.findAll()) {
+//      WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
+//      Aggregator aggregator = aggregatorFactory.create(collector, workerService);
+//      AggregatorService aggregatorService = new AggregatorService(aggregator, collector, metricRepository);
+//      registrar.addCronTask(aggregatorService::aggregate, collector.cron());
 //    }
+
+    for (Discoverer discoverer : discovererRepository.findAll()) {
+      WalkerService walkerService = new WalkerService(discoverer.discovererTimeout(), discoverer.name());
+      Finder finder = finderFactory.create(discoverer, walkerService);
+      FinderService finderService = new FinderService(finder, discoverer, sourceRepository);
+      registrar.addCronTask(finderService::find, discoverer.cron());
+    }
   }
 }

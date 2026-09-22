@@ -24,7 +24,7 @@ public class RuleRepository {
       rs.getObject("service_type_id", Short.class),
       rs.getObject("type", Short.class),
       rs.getObject("src_type", Short.class),
-      rs.getObject("search", String[].class),
+      rs.getArray("search") != null ? (String[]) rs.getArray("search").getArray() : null,
       rs.getObject("pattern", String.class),
       rs.getObject("address", String.class),
       rs.getObject("name", String.class),

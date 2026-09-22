@@ -68,12 +68,27 @@ public class SourceRepository {
                 collector_id, discoverer_id, address, capture, instant, cache, scale, active
             ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-        source.name(), source.description(), source.type(),
-        source.elementId(), source.elementTypeId(),
-        source.siteId(), source.cdcId(), source.zoneId(), source.netId(), source.archId(),
-        source.groupId(), source.serviceId(), source.serviceTypeId(),
-        source.collectorId(), source.discovererId(),
-        source.address(), source.capture(), source.instant(), source.cache().longValue(), source.scale(), source.active()
+        source.name(),
+        source.description(),
+        source.type(),
+        source.elementId(),
+        source.elementTypeId(),
+        source.siteId(),
+        source.cdcId(),
+        source.zoneId(),
+        source.netId(),
+        source.archId(),
+        source.groupId(),
+        source.serviceId(),
+        source.serviceTypeId(),
+        source.collectorId(),
+        source.discovererId(),
+        source.address(),
+        source.capture(),
+        source.instant(),
+        source.cache() == null ? null : source.cache().longValue(),
+        source.scale(),
+        source.active()
     );
   }
 
