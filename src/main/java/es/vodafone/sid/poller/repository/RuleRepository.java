@@ -24,12 +24,13 @@ public class RuleRepository {
       rs.getObject("service_type_id", Short.class),
       rs.getObject("type", Short.class),
       rs.getObject("src_type", Short.class),
-      rs.getArray("search") != null ? (String[]) rs.getArray("search").getArray() : null,
+      rs.getArray("address") != null ? (String[]) rs.getArray("address").getArray() : null,
       rs.getObject("pattern", String.class),
-      rs.getObject("address", String.class),
+      rs.getArray("search") != null ? (String[]) rs.getArray("search").getArray() : null,
       rs.getObject("name", String.class),
-      rs.getObject("scale", Short.class)
-  );
+      rs.getObject("scale", Short.class),
+      rs.getArray("description") != null ? (String[]) rs.getArray("description").getArray() : null
+      );
 
   public List<Rule> findByDiscovererAndElementTypeId(Short discovererId, Short elementTypeId) {
     return jdbcTemplate.query(

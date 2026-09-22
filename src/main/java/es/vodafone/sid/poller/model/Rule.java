@@ -11,9 +11,10 @@ public record Rule(
     Short serviceTypeId,
     Short type,
     Short srcType,
-    String[] search,
+    String[] address,
     String pattern,
-    String address,
+    String[] search,
     String name,
-    Short scale
+    Short scale,
+    String[] description
 ) {}

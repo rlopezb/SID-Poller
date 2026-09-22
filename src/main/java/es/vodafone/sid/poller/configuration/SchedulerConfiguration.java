@@ -70,12 +70,12 @@ public class SchedulerConfiguration implements SchedulingConfigurer {
     scheduler.initialize();
     registrar.setTaskScheduler(scheduler);
 
-//    for (Collector collector : collectorRepository.findAll()) {
-//      WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
-//      Aggregator aggregator = aggregatorFactory.create(collector, workerService);
-//      AggregatorService aggregatorService = new AggregatorService(aggregator, collector, metricRepository);
-//      registrar.addCronTask(aggregatorService::aggregate, collector.cron());
-//    }
+    for (Collector collector : collectorRepository.findAll()) {
+      WorkerService workerService = new WorkerService(collector.workerTimeout(), collector.name());
+      Aggregator aggregator = aggregatorFactory.create(collector, workerService);
+      AggregatorService aggregatorService = new AggregatorService(aggregator, collector, metricRepository);
+      registrar.addCronTask(aggregatorService::aggregate, collector.cron());
+    }
 
     for (Discoverer discoverer : discovererRepository.findAll()) {
       WalkerService walkerService = new WalkerService(discoverer.discovererTimeout(), discoverer.name());
