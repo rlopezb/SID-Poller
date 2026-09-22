@@ -52,7 +52,7 @@ public class FinderService {
           List<Source> existingGroup = sourceRepository.findByElementIdAndCollectorIdAndDiscovererId(elementId, collectorId, discoverer.id());
 
           List<Source> toInsert = discoveredGroup.stream()
-              .filter(candidate -> existingGroup.stream().noneMatch(candidate::isSame))
+              .filter(candidate -> existingGroup.stream().noneMatch(candidate::same))
               .toList();
           if (!toInsert.isEmpty()) {
             log.info("{} inserting {} new sources for element {}",
@@ -61,12 +61,12 @@ public class FinderService {
           }
 
           List<Source> toReactivate = existingGroup.stream()
-              .filter(existing -> discoveredGroup.stream().anyMatch(existing::isSame))
+              .filter(existing -> discoveredGroup.stream().anyMatch(existing::same))
               .toList();
           toReactivate.forEach(source -> sourceRepository.setActive(source.id(), true));
 
           List<Source> disappeared = existingGroup.stream()
-              .filter(existing -> discoveredGroup.stream().noneMatch(existing::isSame))
+              .filter(existing -> discoveredGroup.stream().noneMatch(existing::same))
               .toList();
           List<Source> toDeactivate = disappeared.stream()
               .filter(source -> sourceRepository.hasMetrics(source.id()))

@@ -35,8 +35,30 @@ public record Source(
     return SourceTypeRegistry.isMulti(type);
   }
 
-  public boolean isSame(Source other) {
+  public boolean renamed(Source other) {
+    return (!Objects.equals(this.description(), other.description())
+        || !Objects.equals(this.name(), other.name()))
+        && Objects.equals(this.type(), other.type())
+        && Objects.equals(this.elementId(), other.elementId())
+        && Objects.equals(this.elementTypeId(), other.elementTypeId())
+        && Objects.equals(this.siteId(), other.siteId())
+        && Objects.equals(this.cdcId(), other.cdcId())
+        && Objects.equals(this.zoneId(), other.zoneId())
+        && Objects.equals(this.netId(), other.netId())
+        && Objects.equals(this.archId(), other.archId())
+        && Objects.equals(this.groupId(), other.groupId())
+        && Objects.equals(this.serviceId(), other.serviceId())
+        && Objects.equals(this.serviceTypeId(), other.serviceTypeId())
+        && Objects.equals(this.collectorId(), other.collectorId())
+        && Objects.equals(this.discovererId(), other.discovererId())
+        && Objects.equals(this.address(), other.address())
+        && Objects.equals(this.capture(), other.capture())
+        && Objects.equals(this.scale(), other.scale());
+  }
+
+  public boolean same(Source other) {
     return Objects.equals(this.description(), other.description())
+        && Objects.equals(this.name(), other.name())
         && Objects.equals(this.type(), other.type())
         && Objects.equals(this.elementId(), other.elementId())
         && Objects.equals(this.elementTypeId(), other.elementTypeId())
@@ -52,12 +74,6 @@ public record Source(
         && Objects.equals(this.discovererId(), other.discovererId())
         && Objects.equals(this.address(),other.address())
         && Objects.equals(this.capture(), other.capture())
-        && Objects.equals(this.scale(), other.scale())
-        && Objects.equals(this.active(), other.active())
-        && Objects.equals(this.ticks(), other.ticks())
-        && Objects.equals(this.cache(), other.cache())
-        && Objects.equals(this.instant(), other.instant())
-        && Objects.equals(this.id(), other.id())
-        && Objects.equals(this.name(), other.name());
+        && Objects.equals(this.scale(), other.scale());
   }
 }
