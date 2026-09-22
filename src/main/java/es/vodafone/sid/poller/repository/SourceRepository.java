@@ -102,6 +102,11 @@ public class SourceRepository {
         "update source set active = ? where id = ? and active is distinct from ?", active, id, active);
   }
 
+  public void updateNameAndDescription(Short id, String name, String description) {
+    jdbcTemplate.update(
+        "update source set name = ?, description = ? where id = ?", name, description, id);
+  }
+
   public void deleteById(Short id) {
     jdbcTemplate.update("delete from source where id = ?", id);
   }

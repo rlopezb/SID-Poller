@@ -52,7 +52,8 @@ public class FinderService {
           List<Source> existingGroup = sourceRepository.findByElementIdAndCollectorIdAndDiscovererId(elementId, collectorId, discoverer.id());
 
           List<Source> toInsert = discoveredGroup.stream()
-              .filter(candidate -> existingGroup.stream().noneMatch(candidate::same))
+              .filter(candidate -> existingGroup.stream().noneMatch(candidate::same)
+                  && existingGroup.stream().noneMatch(candidate::renamed))
               .toList();
           if (!toInsert.isEmpty()) {
             log.info("{} inserting {} new sources for element {}",
@@ -65,8 +66,25 @@ public class FinderService {
               .toList();
           toReactivate.forEach(source -> sourceRepository.setActive(source.id(), true));
 
+          List<Source> toRename = existingGroup.stream()
+              .filter(existing -> discoveredGroup.stream().anyMatch(existing::renamed))
+              .toList();
+          if (!toRename.isEmpty()) {
+            log.info("{} updating name/description for {} renamed sources for element {}",
+                discoverer.name(), toRename.size(), elementId);
+            toRename.forEach(existing -> {
+              Source updated = discoveredGroup.stream()
+                  .filter(existing::renamed)
+                  .findFirst()
+                  .orElseThrow();
+              sourceRepository.updateNameAndDescription(existing.id(), updated.name(), updated.description());
+              sourceRepository.setActive(existing.id(), true);
+            });
+          }
+
           List<Source> disappeared = existingGroup.stream()
-              .filter(existing -> discoveredGroup.stream().noneMatch(existing::same))
+              .filter(existing -> discoveredGroup.stream().noneMatch(existing::same)
+                  && discoveredGroup.stream().noneMatch(existing::renamed))
               .toList();
           List<Source> toDeactivate = disappeared.stream()
               .filter(source -> sourceRepository.hasMetrics(source.id()))
